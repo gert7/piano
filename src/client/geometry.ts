@@ -20,7 +20,13 @@ export class BoxConstraints implements SizeConstraints {
 	isTight(): boolean {
 		return this.minWidth === this.maxWidth && this.minHeight === this.maxHeight;
 	}
+
+	static fromVec2(vec2: Vector2): BoxConstraints {
+		return new BoxConstraints(0, vec2.X, 0, vec2.Y);
+	}
 }
+
+export type BoxSize = Vector2;
 
 export class EdgeInsets {
 	/** Left in left-to-right context */

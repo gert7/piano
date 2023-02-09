@@ -9,23 +9,35 @@ import {
 	StatelessElement,
 } from "./element";
 import { Error } from "./error";
+import { BoxConstraints, BoxSize } from "./geometry";
 import { State } from "./state";
+import { RbxComponent } from "./types";
 
 export interface Widget {
+	typeName: string;
+
 	createElement(): Element;
 }
 
 export abstract class FoundationWidget implements Widget {
+	typeName = "FoundationWidget";
+
+	_layout(component: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
+		return component.AbsoluteSize;
+	}
+
 	createElement(): Element {
 		return new FoundationElement(this);
 	}
 
-	createComponent(context: BuildContext): GuiBase2d {
+	createComponent(context: BuildContext): RbxComponent {
 		throw new Error("createComponent() not implemented for abstract class");
 	}
 }
 
 export abstract class LeafChildFoundationWidget extends FoundationWidget {
+	typeName = "LeafChildFoundationWidget ";
+
 	createElement(): Element {
 		return new LeafChildFoundationElement(this);
 	}
@@ -36,6 +48,8 @@ export abstract class LeafChildFoundationWidget extends FoundationWidget {
 }
 
 export abstract class SingleChildFoundationWidget extends FoundationWidget {
+	typeName = "SingleChildFoundationWidget";
+
 	protected _child?: Widget;
 
 	child(): Widget | undefined {
@@ -53,7 +67,9 @@ export abstract class SingleChildFoundationWidget extends FoundationWidget {
 }
 
 export abstract class MultiChildFoundationWidget extends FoundationWidget {
-	private _children: Array<Widget>;
+	typeName = "MultiChildFoundationWidget";
+
+	_children: Array<Widget>;
 
 	children(): Array<Widget> {
 		return this._children;
@@ -63,13 +79,15 @@ export abstract class MultiChildFoundationWidget extends FoundationWidget {
 		return new MultiChildFoundationElement(this);
 	}
 
-	constructor(_: { children: Array<Widget> }) {
+	constructor(children: Array<Widget>) {
 		super();
-		this._children = _.children;
+		this._children = children;
 	}
 }
 
 export abstract class StatelessWidget implements Widget {
+	typeName = "StatelessWidget";
+
 	createElement(): Element {
 		return new StatelessElement(this);
 	}
@@ -80,6 +98,8 @@ export abstract class StatelessWidget implements Widget {
 }
 
 export abstract class StatefulWidget implements Widget {
+	typeName = "StatefulWidget";
+
 	createElement(): Element {
 		return new StatefulElement(this);
 	}

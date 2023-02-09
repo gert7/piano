@@ -1,6 +1,7 @@
-import { BoxConstraints, SizeConstraints } from "./geometry";
 import { Error } from "./error";
+import { BoxConstraints, BoxSize } from "./geometry";
 import { State } from "./state";
+import { RbxComponent } from "./types";
 import {
 	FoundationWidget,
 	LeafChildFoundationWidget,
@@ -15,48 +16,51 @@ export abstract class Element {
 	widget?: Widget;
 	slot?: object;
 
-	private _parent?: Element;
-	protected _children: Array<Element> = [];
-	private _mounted = false;
-	protected _component?: GuiBase2d;
+	protected _parent?: Element;
+	_children: Array<Element> = [];
+	protected _mounted = false;
 	protected _oldWidget?: Widget;
-	protected _constraints?: BoxConstraints;
 	_dirty = true;
+
+	debugPrint(level = 0) {
+		let out = "";
+		for (let i = 0; i < level; i++) {
+			out += " ";
+		}
+		out += "\\";
+		out += this.widget?.typeName;
+		print(out);
+		for (const child of this._children) {
+			child.debugPrint(level + 1);
+		}
+	}
+
+	findChildWithComponent(): FoundationElement {
+		print("No component here at " + this.widget?.typeName);
+		return this._children[0].findChildWithComponent();
+	}
+
+	/** Collapse this element's child elements' subtrees to the first
+	 *  FoundationElements that are found. */
+	findChildrenWithComponents(): Array<FoundationElement> {
+		return this._children.map((e) => e.findChildWithComponent());
+	}
+
+	attachComponents(parent: RbxComponent) {
+		print("attachComponents");
+		const children = this.findChildrenWithComponents();
+		for (const c of children) {
+			c.attachComponents(parent);
+		}
+	}
 
 	inflateWidget(widget: Widget, index?: number): Element {
 		const element = widget.createElement();
 		element._parent = this;
 		element.update(widget);
-		element._constraints = this._constraints;
 		index !== undefined ? (this._children[index] = element) : this._children.push(element);
+		print(`Inflated ${widget.typeName}`);
 		return element;
-	}
-
-	specifyConstraints(constraints: BoxConstraints) {
-		this._constraints = constraints;
-	}
-
-	protected constraintsFromVector2(component: Vector2) {
-		this.specifyConstraints(new BoxConstraints(0.0, component.X, 0.0, component.Y));
-	}
-
-	constraints(): BoxConstraints | undefined {
-		return this._constraints;
-	}
-
-	specifyGuiComponent(component?: GuiBase2d) {
-		this._component = component;
-	}
-
-	traverseGuiComponent(parent: GuiBase2d): GuiBase2d | undefined {
-		this.visitChildren((e) => e.traverseGuiComponent(parent));
-		return;
-	}
-
-	visitChildren(callback: (e: Element) => void) {
-		for (const c of this._children) {
-			callback(c);
-		}
 	}
 
 	update(widget: Widget) {
@@ -72,7 +76,8 @@ export abstract class Element {
 	updateChild(index: number, element?: Element, widget?: Widget, slot?: object): Element | undefined {
 		if (this._children[index] !== undefined) {
 			if (widget !== undefined) {
-				if (tostring(this._children[index]) === tostring(element)) {
+				if (this._children[index].widget?.typeName === widget.typeName) {
+					print("Found same type widget for recycling: " + widget.typeName);
 					this._children[index].update(widget);
 				} else {
 					this._children[index].unmount();
@@ -109,6 +114,23 @@ export type BuildContext = Element;
 
 export class FoundationElement extends Element {
 	widget: FoundationWidget;
+	component: RbxComponent;
+
+	override findChildWithComponent(): FoundationElement {
+		print("Found child with component: " + this.widget.typeName);
+		return this;
+	}
+
+	layout(constraints: BoxConstraints): BoxSize {
+		return this.widget._layout(this.component, constraints, this.findChildrenWithComponents());
+	}
+
+	attachComponents(parent: GuiObject) {
+		this.component.Parent = parent;
+		for (const child of this._children) {
+			child.attachComponents(this.component);
+		}
+	}
 
 	updateChildren(newChildren: Array<Widget>, slots?: Array<object>) {
 		for (let i = 0; i < newChildren.size(); i++) {
@@ -122,28 +144,11 @@ export class FoundationElement extends Element {
 		}
 	}
 
-	override traverseGuiComponent(parent: GuiBase2d): GuiBase2d | undefined {
-		const currentComponent = this._component;
-		if (currentComponent === undefined) {
-			const newComponent = this.widget.createComponent(this);
-			this.constraintsFromVector2(newComponent.AbsoluteSize);
-			newComponent.Parent = parent;
-			this._component = newComponent;
-			this.visitChildren((e) => e.traverseGuiComponent(newComponent));
-			return this._component;
-		} else {
-			const firstChild = this._children[0];
-			if (firstChild !== undefined) {
-				return firstChild.traverseGuiComponent(currentComponent);
-			} else {
-				this.visitChildren((e) => e.traverseGuiComponent(currentComponent));
-			}
-		}
-	}
-
 	constructor(widget: FoundationWidget) {
 		super();
 		this.widget = widget;
+		this.component = widget.createComponent(this);
+		print("creating component");
 	}
 }
 
