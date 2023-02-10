@@ -89,7 +89,7 @@ export class Padding extends BaseFrame {
 	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: FoundationElement[]): BoxSize {
 		let newWidth = frame.Size.Width.Offset;
 		let newHeight = frame.Size.Width.Offset;
-		if (constraints !== undefined) {
+		if (constraints) {
 			if (constraints.maxWidth !== "Infinity") {
 				newWidth = constraints.maxWidth - (this.edgeInsets.start + this.edgeInsets.end);
 				if (newWidth < 0) {

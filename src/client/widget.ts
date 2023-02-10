@@ -112,3 +112,15 @@ export abstract class StatefulWidget implements Widget {
 		throw new Error("createState() not implemented for abstract class");
 	};
 }
+
+export abstract class HookWidget implements Widget {
+	typeName = "HookWidget";
+
+	createElement(): Element {
+		return new StatelessElement(this);
+	}
+
+	build(): Widget {
+		throw new Error("build() not implemented for abstract class");
+	}
+}

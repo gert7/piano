@@ -17,5 +17,7 @@ export abstract class State<T extends StatefulWidget> {
 		throw new Error("build() not implemented for abstract class");
 	}
 
-	didUpdateWidget(oldWidget?: T): void { }
+	didUpdateWidget(oldWidget: T): void { }
+
+	dispose(): void { }
 }

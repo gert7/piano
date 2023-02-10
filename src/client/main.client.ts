@@ -60,6 +60,8 @@ class _CounterWidgetState extends State<CounterWidget> {
 }
 
 class HomeWidget extends StatelessWidget {
+	typeName: string = "HomeWidget";
+
 	override build(): Widget {
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),

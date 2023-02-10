@@ -4,6 +4,7 @@ import { State } from "./state";
 import { RbxComponent } from "./types";
 import {
 	FoundationWidget,
+	HookWidget,
 	LeafChildFoundationWidget,
 	MultiChildFoundationWidget,
 	SingleChildFoundationWidget,
@@ -40,7 +41,7 @@ export abstract class Element {
 	 * otherwise traverses down the tree.
 	 */
 	findChildWithComponent(): FoundationElement {
-		print("No component here at " + this.widget?.typeName);
+		// print("No component here at " + this.widget?.typeName);
 		return this._children[0].findChildWithComponent();
 	}
 
@@ -51,7 +52,7 @@ export abstract class Element {
 	}
 
 	attachComponents(parent: RbxComponent) {
-		print("attachComponents");
+		// print("attachComponents");
 		const children = this.findChildrenWithComponents();
 		for (const c of children) {
 			c.attachComponents(parent);
@@ -83,8 +84,8 @@ export abstract class Element {
 	}
 
 	updateChild(index: number, element?: Element, widget?: Widget, slot?: object): Element | undefined {
-		if (this._children[index] !== undefined) {
-			if (widget !== undefined) {
+		if (this._children[index]) {
+			if (widget) {
 				if (this._children[index].widget?.typeName === widget.typeName) {
 					print("Found same type widget for recycling: " + widget.typeName);
 					this._children[index].update(widget);
@@ -97,8 +98,8 @@ export abstract class Element {
 				this._children[index].unmount();
 			}
 		} else {
-			if (widget !== undefined) {
-				if (element !== undefined) {
+			if (widget) {
+				if (element) {
 					this._children[index] = element;
 				} else {
 					this.inflateWidget(widget, index);
@@ -138,7 +139,7 @@ export class FoundationElement extends Element {
 
 	removeConnection(key: string): boolean {
 		const existing = this.connections.get(key);
-		if (existing !== undefined) {
+		if (existing) {
 			existing.Disconnect();
 			return this.connections.delete(key);
 		} else {
@@ -159,7 +160,7 @@ export class FoundationElement extends Element {
 	update(widget: Widget): void {
 		super.update(widget);
 		this.widget.updateComponent(this, this.component);
-		if (this.constraints !== undefined) {
+		if (this.constraints) {
 			print("Layout");
 			this.layout(this.constraints);
 		}
@@ -172,7 +173,7 @@ export class FoundationElement extends Element {
 
 	override rebuild(): void {
 		if (!this._dirty) return;
-		if (this.constraints !== undefined) {
+		if (this.constraints) {
 			this.layout(this.constraints);
 		}
 		super.rebuild();
@@ -243,10 +244,13 @@ export class MultiChildFoundationElement extends FoundationElement {
 	}
 }
 
-export abstract class ComponentElement extends Element {
+/** Element superclass for Widgets that *compose* other widgets. Composing
+ * Widgets are Widgets with a `build()` method.
+ */
+export abstract class ComposingElement extends Element {
 }
 
-export class StatelessElement extends ComponentElement {
+export class StatelessElement extends ComposingElement {
 	widget: StatelessWidget;
 
 	override update(widget: StatelessWidget): void {
@@ -267,7 +271,7 @@ export class StatelessElement extends ComponentElement {
 	}
 }
 
-export class StatefulElement extends ComponentElement {
+export class StatefulElement extends ComposingElement {
 	widget: StatefulWidget;
 	state: State<StatefulWidget>;
 
@@ -282,7 +286,7 @@ export class StatefulElement extends ComponentElement {
 
 	override update(widget: StatefulWidget) {
 		this.state.widget = widget;
-		if (this._oldWidget !== undefined) {
+		if (this._oldWidget) {
 			this.state.didUpdateWidget(this._oldWidget as StatefulWidget);
 		}
 		this.rebuild();
@@ -294,6 +298,10 @@ export class StatefulElement extends ComponentElement {
 		const child = this.state.build(this);
 		this.updateChild(0, undefined, child, undefined);
 		super.rebuild();
+	}
+
+	override unmount(): void {
+		this.state.dispose();
 	}
 }
 
@@ -325,12 +333,12 @@ export class RootElement extends Element {
 			this.timePassed = 0.0;
 			while (!this.elementsToRebuild.isEmpty()) {
 				const element = this.elementsToRebuild.pop();
-				if (element !== undefined && element._dirty) {
+				if (element && element._dirty) {
 					element.rebuild();
 				}
 				const withComponent = element?.findChildWithComponent();
 				const constraints = withComponent?.constraints;
-				if (constraints !== undefined) {
+				if (constraints) {
 					withComponent?.layout(constraints);
 				}
 			}
