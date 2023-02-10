@@ -24,20 +24,29 @@ export class TextWidget extends LeafChildFoundationWidget {
 	}
 }
 
+export function expandRbxComponentToConstraints(
+	component: RbxComponent,
+	constraints: BoxConstraints,
+	width = true,
+	height = true,
+): BoxSize {
+	let newWidth = component.Size.Width.Offset;
+	let newHeight = component.Size.Width.Offset;
+	if (width && constraints.maxWidth !== "Infinity") {
+		newWidth = constraints.maxWidth;
+	}
+	if (height && constraints.maxHeight !== "Infinity") {
+		newHeight = constraints.maxHeight;
+	}
+	component.Size = new UDim2(0, newWidth, 0, newHeight);
+	return component.AbsoluteSize;
+}
+
 export class BaseFrame extends SingleChildFoundationWidget {
 	typeName = "BaseFrame";
 
 	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
-		let newWidth = frame.Size.Width.Offset;
-		let newHeight = frame.Size.Height.Offset;
-		if (constraints.maxWidth !== "Infinity") {
-			newWidth = constraints.maxWidth;
-		}
-		if (constraints.maxHeight !== "Infinity") {
-			newHeight = constraints.maxHeight;
-		}
-		frame.Size = new UDim2(0, newWidth, 0, newHeight);
-		return frame.AbsoluteSize;
+		return expandRbxComponentToConstraints(frame, constraints);
 	}
 
 	override createComponent(context: BuildContext): Frame {
@@ -115,6 +124,7 @@ export class Row extends MultiChildBaseFrame {
 	override typeName = "Row";
 
 	spreadEvenly = false;
+	desiredSpace = 8.0;
 
 	override _layout(frame: GuiObject, constraints: BoxConstraints, children: FoundationElement[]): BoxSize {
 		print("Row layout");
@@ -122,8 +132,10 @@ export class Row extends MultiChildBaseFrame {
 		const totalWidth = selfSize.X;
 		let childWidths = 0;
 		print("Childrens" + children.size());
+		const evenDivide = constraints.clone();
+		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
 		for (const child of children) {
-			const size = child.layout(constraints);
+			const size = child.layout(evenDivide);
 			childWidths += size.X;
 		}
 		const spacing = (totalWidth - childWidths) / (children.size() + 1);

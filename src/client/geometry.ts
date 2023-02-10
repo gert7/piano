@@ -10,11 +10,31 @@ export class BoxConstraints implements SizeConstraints {
 	minHeight: constraint;
 	maxHeight: constraint;
 
-	constructor(minWidth: constraint, maxWidth: constraint, minHeight: constraint, maxHeight: constraint) {
-		this.minWidth = minWidth;
-		this.maxWidth = maxWidth;
-		this.minHeight = minHeight;
-		this.maxHeight = maxHeight;
+	constructor(minWidth?: constraint, maxWidth?: constraint, minHeight?: constraint, maxHeight?: constraint) {
+		this.minWidth = minWidth ?? 0;
+		this.maxWidth = maxWidth ?? "Infinity";
+		this.minHeight = minHeight ?? 0;
+		this.maxHeight = maxHeight ?? "Infinity";
+	}
+
+	maxWidthN(): number {
+		if (this.maxWidth !== "Infinity") {
+			return this.maxWidth;
+		} else {
+			return 999999;
+		}
+	}
+
+	maxHeightN(): number {
+		if (this.maxWidth !== "Infinity") {
+			return this.maxWidth;
+		} else {
+			return 999999;
+		}
+	}
+
+	clone(): BoxConstraints {
+		return new BoxConstraints(this.minWidth, this.maxWidth, this.minHeight, this.maxHeight);
 	}
 
 	isTight(): boolean {

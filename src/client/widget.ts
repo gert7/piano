@@ -33,6 +33,10 @@ export abstract class FoundationWidget implements Widget {
 	createComponent(context: BuildContext): RbxComponent {
 		throw new Error("createComponent() not implemented for abstract class");
 	}
+
+	updateComponent(context: BuildContext, component: RbxComponent): boolean {
+		return false;
+	}
 }
 
 export abstract class LeafChildFoundationWidget extends FoundationWidget {
@@ -104,7 +108,7 @@ export abstract class StatefulWidget implements Widget {
 		return new StatefulElement(this);
 	}
 
-	createState(): State<StatefulWidget> {
+	createState = (): State<StatefulWidget> => {
 		throw new Error("createState() not implemented for abstract class");
-	}
+	};
 }

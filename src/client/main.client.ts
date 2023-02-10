@@ -1,6 +1,9 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
-import { StatelessWidget, Widget } from "./widget";
+import { StatefulWidget, StatelessWidget, Widget } from "./widget";
+import { BuildContext, RootElement } from "./element";
+import { RobloxTextButton } from "./button";
+import { State } from "./state";
 
 const Players = game.GetService("Players");
 
@@ -16,32 +19,51 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	rootFrame.BackgroundTransparency = 1.0;
 	rootFrame.Parent = rootNode;
 
-	const rootElement = home.createElement();
-	const times = 1000;
+	const rootElement = new RootElement((event) => {
+		print("event received");
+	});
+	const homeElement = home.createElement();
+	rootElement.appendToRoot(homeElement);
+	homeElement.update(home);
+
 	const constraints = new BoxConstraints(0.0, rootFrame.AbsoluteSize.X, 0.0, rootFrame.AbsoluteSize.Y);
-	for (let i = 0; i < times; i++) {
-		rootElement.update(home);
-		const foundationRoot = rootElement.findChildWithComponent();
-		foundationRoot.attachComponents(rootFrame);
-		foundationRoot.layout(constraints);
-	}
+	const foundationRoot = rootElement.findChildWithComponent();
+	foundationRoot.attachComponents(rootFrame);
+	foundationRoot.layout(constraints);
 	rootElement.debugPrint();
+}
+
+class CounterWidget extends StatefulWidget {
+	override createState = (): State<StatefulWidget> => new _CounterWidgetState();
+}
+
+class _CounterWidgetState extends State<CounterWidget> {
+	private counter = 0;
+
+	increaseCounter() {
+		this.setState(() => {
+			this.counter++;
+		});
+	}
+
+	override build(context: BuildContext): Widget {
+		const button = new RobloxTextButton("Hello " + this.counter, () => this.increaseCounter());
+		const widgets: Array<Widget> = [button];
+		for (let i = 0; i < this.counter; i++) {
+			widgets.push(new TextWidget("Beep " + i));
+		}
+
+		return new Row({
+			children: widgets,
+		});
+	}
 }
 
 class HomeWidget extends StatelessWidget {
 	override build(): Widget {
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),
-			child: new Row({
-				children: [
-					new TextWidget("New York"),
-					new TextWidget("Washington"),
-					new TextWidget("Detroit"),
-					new TextWidget("China"),
-					new TextWidget("London"),
-					new TextWidget("Wensleydale"),
-				],
-			}),
+			child: new CounterWidget(),
 		});
 	}
 }

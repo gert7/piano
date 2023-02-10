@@ -1,11 +1,21 @@
+import { BuildContext, Element, StatefulElement } from "./element";
+import { Error } from "./error";
 import { StatefulWidget, Widget } from "./widget";
 
-export interface State<T extends StatefulWidget> {
-	// TODO: Add setState()
+export abstract class State<T extends StatefulWidget> {
+	setState(f: () => void) {
+		f();
+		this._element.markRebuild();
+	}
 
-	build(): Widget;
+	initState() { }
 
-	widget: T;
+	widget!: Widget;
+	_element!: StatefulElement;
 
-	didUpdateWidget(oldWidget?: T): void;
+	build(context: BuildContext): Widget {
+		throw new Error("build() not implemented for abstract class");
+	}
+
+	didUpdateWidget(oldWidget?: T): void { }
 }
