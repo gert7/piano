@@ -266,8 +266,7 @@ export class MultiChildFoundationElement extends FoundationElement {
 /** Element superclass for Widgets that *compose* other widgets. Composing
  * Widgets are Widgets with a `build()` method.
  */
-export abstract class ComposingElement extends Element {
-}
+export abstract class ComposingElement extends Element { }
 
 export class StatelessElement extends ComposingElement {
 	widget: StatelessWidget;

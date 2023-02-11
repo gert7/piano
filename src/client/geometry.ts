@@ -10,7 +10,12 @@ export class BoxConstraints implements SizeConstraints {
 	minHeight: constraint;
 	maxHeight: constraint;
 
-	constructor(minWidth?: constraint, maxWidth?: constraint, minHeight?: constraint, maxHeight?: constraint) {
+	constructor(
+		minWidth?: constraint,
+		maxWidth?: constraint,
+		minHeight?: constraint,
+		maxHeight?: constraint,
+	) {
 		this.minWidth = minWidth ?? 0;
 		this.maxWidth = maxWidth ?? "Infinity";
 		this.minHeight = minHeight ?? 0;

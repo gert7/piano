@@ -46,7 +46,11 @@ export function expandRbxComponentToConstraints(
 }
 
 export class BaseFrame extends SingleChildFoundationWidget {
-	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
+	override _layout(
+		frame: RbxComponent,
+		constraints: BoxConstraints,
+		children: Array<FoundationElement>,
+	): BoxSize {
 		return expandRbxComponentToConstraints(frame, constraints);
 	}
 
@@ -59,7 +63,11 @@ export class BaseFrame extends SingleChildFoundationWidget {
 }
 
 export class MultiChildBaseFrame extends MultiChildFoundationWidget {
-	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
+	override _layout(
+		frame: RbxComponent,
+		constraints: BoxConstraints,
+		children: Array<FoundationElement>,
+	): BoxSize {
 		let newWidth = frame.Size.Width.Offset;
 		let newHeight = frame.Size.Height.Offset;
 		if (constraints.maxWidth !== "Infinity") {
@@ -83,7 +91,11 @@ export class MultiChildBaseFrame extends MultiChildFoundationWidget {
 export class Padding extends BaseFrame {
 	private edgeInsets: EdgeInsets;
 
-	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: FoundationElement[]): BoxSize {
+	override _layout(
+		frame: RbxComponent,
+		constraints: BoxConstraints,
+		children: FoundationElement[],
+	): BoxSize {
 		let newWidth = frame.Size.Width.Offset;
 		let newHeight = frame.Size.Width.Offset;
 		if (constraints) {
@@ -121,7 +133,11 @@ export class Row extends MultiChildBaseFrame {
 	spreadEvenly = false;
 	desiredSpace = 8.0;
 
-	override _layout(frame: GuiObject, constraints: BoxConstraints, children: FoundationElement[]): BoxSize {
+	override _layout(
+		frame: GuiObject,
+		constraints: BoxConstraints,
+		children: FoundationElement[],
+	): BoxSize {
 		print("Row layout");
 		const selfSize = super._layout(frame, constraints, children);
 		const totalWidth = selfSize.X;

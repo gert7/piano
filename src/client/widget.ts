@@ -98,7 +98,6 @@ export abstract class StatefulWidget implements Widget {
 	abstract createState: () => State<StatefulWidget>;
 }
 
-
 export abstract class HookWidget implements Widget {
 	createElement(): Element {
 		return new HookElement(this);

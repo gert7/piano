@@ -22,7 +22,11 @@ export class RobloxTextButton extends LeafFoundationWidget {
 		return button;
 	}
 
-	_layout(component: GuiObject, constraints: BoxConstraints, children: FoundationElement[]): Vector2 {
+	_layout(
+		component: GuiObject,
+		constraints: BoxConstraints,
+		children: FoundationElement[],
+	): Vector2 {
 		return expandRbxComponentToConstraints(component, constraints);
 	}
 

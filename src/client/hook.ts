@@ -22,11 +22,9 @@ export interface HookState<R, H extends Hook<R>> {
 	dispose(): void;
 }
 
-
 export function use<R>(hook: Hook<R>): R {
 	return HookElement.useHook(hook);
 }
-
 
 export class HookElement extends ComposingElement {
 	/** Map of active HookElements based on the Build Owner. */

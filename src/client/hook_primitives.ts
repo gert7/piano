@@ -30,7 +30,6 @@ class _MemoizedHookState<R> implements HookState<R, _MemoizedHook<R>> {
 
 	private value!: R;
 
-
 	initState() {
 		this.value = this.hook.valueBuilder();
 	}
