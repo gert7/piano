@@ -1,11 +1,14 @@
-import { BuildContext, Element, FoundationElement } from "./element";
+import { BuildContext, Element, FoundationElement, LeafFoundationElement } from "./element";
 import { BoxConstraints, BoxSize, EdgeInsets } from "./geometry";
 import { RbxComponent } from "./types";
-import { LeafChildFoundationWidget, MultiChildFoundationWidget, SingleChildFoundationWidget, Widget } from "./widget";
+import {
+	LeafFoundationWidget,
+	MultiChildFoundationWidget,
+	SingleChildFoundationWidget,
+	Widget,
+} from "./widget";
 
-export class TextWidget extends LeafChildFoundationWidget {
-	typeName = "TextWidget";
-
+export class TextWidget extends LeafFoundationWidget {
 	text: string;
 
 	constructor(text: string) {
@@ -43,8 +46,6 @@ export function expandRbxComponentToConstraints(
 }
 
 export class BaseFrame extends SingleChildFoundationWidget {
-	typeName = "BaseFrame";
-
 	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
 		return expandRbxComponentToConstraints(frame, constraints);
 	}
@@ -58,8 +59,6 @@ export class BaseFrame extends SingleChildFoundationWidget {
 }
 
 export class MultiChildBaseFrame extends MultiChildFoundationWidget {
-	typeName = "MultiChildBaseFrame";
-
 	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
 		let newWidth = frame.Size.Width.Offset;
 		let newHeight = frame.Size.Height.Offset;
@@ -82,8 +81,6 @@ export class MultiChildBaseFrame extends MultiChildFoundationWidget {
 }
 
 export class Padding extends BaseFrame {
-	typeName = "Padding";
-
 	private edgeInsets: EdgeInsets;
 
 	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: FoundationElement[]): BoxSize {
@@ -121,8 +118,6 @@ export class Padding extends BaseFrame {
 }
 
 export class Row extends MultiChildBaseFrame {
-	override typeName = "Row";
-
 	spreadEvenly = false;
 	desiredSpace = 8.0;
 
@@ -152,5 +147,31 @@ export class Row extends MultiChildBaseFrame {
 	constructor(_: { children: Array<Widget>; spreadEvenly?: boolean }) {
 		super(_.children);
 		this.spreadEvenly = _.spreadEvenly ?? this.spreadEvenly;
+	}
+}
+
+export class RobloxComponentWidget extends LeafFoundationWidget {
+	createElement(): Element {
+		return new LeafFoundationElement(this);
+	}
+
+	override createComponent(context: Element): GuiObject {
+		return this.component;
+	}
+
+	_layout(component: GuiObject, constraints: BoxConstraints, _: FoundationElement[]): Vector2 {
+		if (this.layout) {
+			return expandRbxComponentToConstraints(component, constraints);
+		}
+		return constraints.toVec2();
+	}
+
+	component: GuiObject;
+	layout: boolean;
+
+	constructor(component: GuiObject, layout = false) {
+		super();
+		this.component = component;
+		this.layout = layout;
 	}
 }

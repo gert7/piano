@@ -5,7 +5,7 @@ import { RbxComponent } from "./types";
 import {
 	FoundationWidget,
 	HookWidget,
-	LeafChildFoundationWidget,
+	LeafFoundationWidget,
 	MultiChildFoundationWidget,
 	SingleChildFoundationWidget,
 	StatefulWidget,
@@ -24,13 +24,27 @@ export abstract class Element {
 	_dirty = true;
 	owner?: RootElement;
 
+	/** Attempts to return the name of the Widget, or "Unknown widget" if the
+	 * Widget is null */
+	widgetName(): string {
+		if (this.widget) {
+			return `${getmetatable(this.widget)}`;
+		} else {
+			return "Unknown widget";
+		}
+	}
+
 	debugPrint(level = 0) {
 		let out = "";
 		for (let i = 0; i < level; i++) {
 			out += " ";
 		}
 		out += "/";
-		out += this.widget?.typeName;
+		if (this.widget) {
+			out += getmetatable(this.widget);
+		} else {
+			out += "Unknown widget?";
+		}
 		print(out);
 		for (const child of this._children) {
 			child.debugPrint(level + 1);
@@ -65,7 +79,7 @@ export abstract class Element {
 		element.owner = this.owner;
 		element.update(widget);
 		index !== undefined ? (this._children[index] = element) : this._children.push(element);
-		print(`Inflated ${widget.typeName}`);
+		print(`Inflated ${getmetatable(widget)}`);
 		return element;
 	}
 
@@ -77,17 +91,22 @@ export abstract class Element {
 
 	unmount() {
 		this._mounted = false;
-		print(`Unmounted ${this.widget?.typeName}`);
+		print(`Unmounted ${this.widgetName()}`);
 		for (const child of this._children) {
 			child.unmount();
 		}
 	}
 
-	updateChild(index: number, element?: Element, widget?: Widget, slot?: object): Element | undefined {
-		if (this._children[index]) {
+	updateChild(
+		index: number,
+		element?: Element,
+		widget?: Widget,
+		slot?: object,
+	): Element | undefined {
+		if (this._children[index] && this._children[index].widget) {
 			if (widget) {
-				if (this._children[index].widget?.typeName === widget.typeName) {
-					print("Found same type widget for recycling: " + widget.typeName);
+				if (getmetatable(this._children[index].widget!) === getmetatable(widget)) {
+					print(`Found same type widget for recycling: ${this.widgetName()}`);
 					this._children[index].update(widget);
 				} else {
 					this._children[index].unmount();
@@ -153,7 +172,7 @@ export class FoundationElement extends Element {
 	}
 
 	override findChildWithComponent(): FoundationElement {
-		print("Found child with component: " + this.widget.typeName);
+		print("Found child with component: " + this.widgetName());
 		return this;
 	}
 
@@ -214,8 +233,8 @@ export class FoundationElement extends Element {
 	}
 }
 
-export class LeafChildFoundationElement extends FoundationElement {
-	constructor(widget: LeafChildFoundationWidget) {
+export class LeafFoundationElement extends FoundationElement {
+	constructor(widget: LeafFoundationWidget) {
 		super(widget);
 		this.widget = widget;
 	}
@@ -260,7 +279,7 @@ export class StatelessElement extends ComposingElement {
 
 	override rebuild() {
 		if (!this._dirty) return;
-		const child = this.widget.build();
+		const child = this.widget.build(this);
 		this.updateChild(0, undefined, child, undefined);
 		super.rebuild();
 	}
@@ -309,7 +328,7 @@ export class RootElement extends Element {
 	eventHandler?: (_: string) => void;
 	elementsToRebuild: Array<Element> = [];
 	timePassed = 0.0;
-	interval = 0.0;
+	interval = 0.016;
 
 	debugPrint(level = 0) {
 		print("Root");

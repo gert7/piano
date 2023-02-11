@@ -1,9 +1,9 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
-import { StatefulWidget, StatelessWidget, Widget } from "./widget";
+import { HookWidget, StatefulWidget, StatelessWidget, Widget } from "./widget";
 import { BuildContext, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
-import { State } from "./state";
+import { useState } from "./hook_primitives";
 
 const Players = game.GetService("Players");
 
@@ -26,42 +26,39 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	rootElement.appendToRoot(homeElement);
 	homeElement.update(home);
 
-	const constraints = new BoxConstraints(0.0, rootFrame.AbsoluteSize.X, 0.0, rootFrame.AbsoluteSize.Y);
+	const constraints = new BoxConstraints(
+		0.0,
+		rootFrame.AbsoluteSize.X,
+		0.0,
+		rootFrame.AbsoluteSize.Y,
+	);
 	const foundationRoot = rootElement.findChildWithComponent();
 	foundationRoot.attachComponents(rootFrame);
 	foundationRoot.layout(constraints);
 	rootElement.debugPrint();
 }
 
-class CounterWidget extends StatefulWidget {
-	override createState = (): State<StatefulWidget> => new _CounterWidgetState();
-}
-
-class _CounterWidgetState extends State<CounterWidget> {
-	private counter = 0;
-
-	increaseCounter() {
-		this.setState(() => {
-			this.counter++;
-		});
-	}
-
+class CounterWidget extends HookWidget {
 	override build(context: BuildContext): Widget {
-		const button = new RobloxTextButton("Hello " + this.counter, () => this.increaseCounter());
-		const widgets: Array<Widget> = [button];
-		for (let i = 0; i < this.counter; i++) {
-			widgets.push(new TextWidget("Beep " + i));
+		const [counter, setCounter] = useState(() => 0);
+
+		const incrementCounter = () => setCounter(counter + 1);
+
+		const textWidgets = [];
+		for (let i = 0; i < counter; i++) {
+			textWidgets.push(new TextWidget("Beep " + i));
 		}
 
 		return new Row({
-			children: widgets,
+			children: [
+				new RobloxTextButton("Hello from HookWidget: " + counter, incrementCounter),
+				...textWidgets,
+			],
 		});
 	}
 }
 
-class HomeWidget extends StatelessWidget {
-	typeName: string = "HomeWidget";
-
+class HomeWidget extends HookWidget {
 	override build(): Widget {
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),

@@ -2,9 +2,9 @@ import { expandRbxComponentToConstraints } from "./basic";
 import { Element, FoundationElement } from "./element";
 import { BoxConstraints } from "./geometry";
 import { RbxComponent } from "./types";
-import { LeafChildFoundationWidget, StatelessWidget } from "./widget";
+import { LeafFoundationWidget, StatelessWidget } from "./widget";
 
-export class RobloxTextButton extends LeafChildFoundationWidget {
+export class RobloxTextButton extends LeafFoundationWidget {
 	text: string;
 	onClick: () => void;
 

@@ -13,9 +13,7 @@ export abstract class State<T extends StatefulWidget> {
 	widget!: Widget;
 	_element!: StatefulElement;
 
-	build(context: BuildContext): Widget {
-		throw new Error("build() not implemented for abstract class");
-	}
+	abstract build(context: BuildContext): Widget;
 
 	didUpdateWidget(oldWidget: T): void { }
 

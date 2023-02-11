@@ -2,27 +2,28 @@ import {
 	BuildContext,
 	Element,
 	FoundationElement,
-	LeafChildFoundationElement,
+	LeafFoundationElement,
 	MultiChildFoundationElement,
 	SingleChildFoundationElement,
 	StatefulElement,
 	StatelessElement,
 } from "./element";
-import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
+import { HookElement } from "./hook";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 
+/** A Widget is a blueprint for creating an {@link Element}. */
 export interface Widget {
-	typeName: string;
-
 	createElement(): Element;
 }
 
 export abstract class FoundationWidget implements Widget {
-	typeName = "FoundationWidget";
-
-	_layout(component: RbxComponent, constraints: BoxConstraints, children: Array<FoundationElement>): BoxSize {
+	_layout(
+		component: RbxComponent,
+		constraints: BoxConstraints,
+		children: Array<FoundationElement>,
+	): BoxSize {
 		return component.AbsoluteSize;
 	}
 
@@ -30,20 +31,16 @@ export abstract class FoundationWidget implements Widget {
 		return new FoundationElement(this);
 	}
 
-	createComponent(context: BuildContext): RbxComponent {
-		throw new Error("createComponent() not implemented for abstract class");
-	}
+	abstract createComponent(context: BuildContext): RbxComponent;
 
 	updateComponent(context: BuildContext, component: RbxComponent): boolean {
 		return false;
 	}
 }
 
-export abstract class LeafChildFoundationWidget extends FoundationWidget {
-	typeName = "LeafChildFoundationWidget ";
-
+export abstract class LeafFoundationWidget extends FoundationWidget {
 	createElement(): Element {
-		return new LeafChildFoundationElement(this);
+		return new LeafFoundationElement(this);
 	}
 
 	constructor() {
@@ -52,8 +49,6 @@ export abstract class LeafChildFoundationWidget extends FoundationWidget {
 }
 
 export abstract class SingleChildFoundationWidget extends FoundationWidget {
-	typeName = "SingleChildFoundationWidget";
-
 	protected _child?: Widget;
 
 	child(): Widget | undefined {
@@ -71,8 +66,6 @@ export abstract class SingleChildFoundationWidget extends FoundationWidget {
 }
 
 export abstract class MultiChildFoundationWidget extends FoundationWidget {
-	typeName = "MultiChildFoundationWidget";
-
 	_children: Array<Widget>;
 
 	children(): Array<Widget> {
@@ -90,37 +83,26 @@ export abstract class MultiChildFoundationWidget extends FoundationWidget {
 }
 
 export abstract class StatelessWidget implements Widget {
-	typeName = "StatelessWidget";
-
 	createElement(): Element {
 		return new StatelessElement(this);
 	}
 
-	build(): Widget {
-		throw new Error("build() not implemented for abstract class");
-	}
+	abstract build(context: BuildContext): Widget;
 }
 
 export abstract class StatefulWidget implements Widget {
-	typeName = "StatefulWidget";
-
 	createElement(): Element {
 		return new StatefulElement(this);
 	}
 
-	createState = (): State<StatefulWidget> => {
-		throw new Error("createState() not implemented for abstract class");
-	};
+	abstract createState: () => State<StatefulWidget>;
 }
 
+
 export abstract class HookWidget implements Widget {
-	typeName = "HookWidget";
-
 	createElement(): Element {
-		return new StatelessElement(this);
+		return new HookElement(this);
 	}
 
-	build(): Widget {
-		throw new Error("build() not implemented for abstract class");
-	}
+	abstract build(context: BuildContext): Widget;
 }

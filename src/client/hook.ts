@@ -1,14 +1,14 @@
-import { ComposingElement } from "./element";
+import { BuildContext, ComposingElement } from "./element";
 import { Error } from "./error";
 import { HookWidget } from "./widget";
 
-interface Hook<R> {
+export interface Hook<R> {
 	keys: Array<object>;
 
 	createState: () => HookState<R, Hook<R>>;
 }
 
-interface HookState<R, H extends Hook<R>> {
+export interface HookState<R, H extends Hook<R>> {
 	hook: H;
 
 	_element: HookElement;
@@ -17,57 +17,16 @@ interface HookState<R, H extends Hook<R>> {
 
 	didUpdateHook(oldHook: H): void;
 
-	build(): R;
+	build(context: BuildContext): R | undefined;
 
 	dispose(): void;
 }
 
-class ObjectRef<T> {
-	readonly value: T;
 
-	constructor(value: T) {
-		this.value = value;
-	}
-}
-
-function use<R>(hook: Hook<R>): R {
+export function use<R>(hook: Hook<R>): R {
 	return HookElement.useHook(hook);
 }
 
-class _RefHook<R> implements Hook<R> {
-	keys = [];
-	createState = () => new _RefHookState<R>();
-
-	value: R;
-
-	constructor(value: R) {
-		this.value = value;
-	}
-}
-
-class _RefHookState<R> implements HookState<R, _RefHook<R>> {
-	hook!: _RefHook<R>;
-
-	_element!: HookElement;
-
-	private ref!: ObjectRef<R>;
-
-	initState() {
-		this.ref = new ObjectRef(this.hook.value);
-	}
-
-	didUpdateHook(oldHook: _RefHook<R>): void { }
-
-	build(): R {
-		return this.ref.value;
-	}
-
-	dispose(): void { }
-}
-
-function useRef<R>(value: R) {
-	return use(new _RefHook(value));
-}
 
 export class HookElement extends ComposingElement {
 	/** Map of active HookElements based on the Build Owner. */
@@ -85,7 +44,7 @@ export class HookElement extends ComposingElement {
 		return active._useHook(hook);
 	}
 
-	static arraysIdentical(hook1: Hook<object>, hook2: Hook<object>): boolean {
+	static keysIdentical<R>(hook1: Hook<R>, hook2: Hook<R>): boolean {
 		const p1 = hook1.keys;
 		const p2 = hook2.keys;
 
@@ -102,19 +61,21 @@ export class HookElement extends ComposingElement {
 
 	_useHook<R>(hook: Hook<R>): R {
 		const hookState = this._hooks[this._hookCounter];
-		if (hookState) {
-			const oldHook = hookState.hook;
+		if (hookState && HookElement.keysIdentical(hookState.hook, hook)) {
+			const oldHook = hookState.hook as Hook<R>;
 			hookState.hook = hook;
 			hookState.didUpdateHook(oldHook);
 			this._hookCounter++;
-			return hookState.build() as R;
+			return hookState.build(this) as R;
 		} else {
+			this._hooks[this._hookCounter]?.dispose();
 			this._hooks[this._hookCounter] = hook.createState();
-			this._hooks[this._hookCounter]._element = this;
-			this._hooks[this._hookCounter].hook = hook;
-			this._hooks[this._hookCounter].initState();
+			const newHook = this._hooks[this._hookCounter];
+			newHook._element = this;
+			newHook.hook = hook;
+			newHook.initState();
 			this._hookCounter++;
-			return this._hooks[this._hookCounter].build() as R;
+			return newHook.build(this) as R;
 		}
 	}
 
@@ -124,10 +85,10 @@ export class HookElement extends ComposingElement {
 	}
 
 	override rebuild() {
+		if (!this._dirty) return;
 		if (this.owner) {
 			HookElement.activeHookElement = this;
-			if (!this._dirty) return;
-			const child = this.widget.build();
+			const child = this.widget.build(this);
 			this.updateChild(0, undefined, child, undefined);
 			this._hookCounter = 0;
 			super.rebuild();

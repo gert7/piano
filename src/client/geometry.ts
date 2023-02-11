@@ -44,6 +44,10 @@ export class BoxConstraints implements SizeConstraints {
 	static fromVec2(vec2: Vector2): BoxConstraints {
 		return new BoxConstraints(0, vec2.X, 0, vec2.Y);
 	}
+
+	toVec2(): Vector2 {
+		return new Vector2(this.maxWidthN(), this.maxHeightN());
+	}
 }
 
 export type BoxSize = Vector2;
