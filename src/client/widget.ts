@@ -42,10 +42,6 @@ export abstract class LeafFoundationWidget extends FoundationWidget {
 	createElement(): Element {
 		return new LeafFoundationElement(this);
 	}
-
-	constructor() {
-		super();
-	}
 }
 
 export abstract class SingleChildFoundationWidget extends FoundationWidget {

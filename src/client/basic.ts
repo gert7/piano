@@ -17,6 +17,7 @@ export class TextWidget extends LeafFoundationWidget {
 	}
 
 	override createComponent(context: BuildContext): RbxComponent {
+		// print("createComponent on TextWidget");
 		const text = new Instance("TextLabel");
 		text.Text = this.text;
 		text.BackgroundTransparency = 1.0;
@@ -122,10 +123,10 @@ export class Padding extends BaseFrame {
 		return frame.AbsoluteSize;
 	}
 
-	constructor(_: { child: Widget; edgeInsets: EdgeInsets }) {
+	constructor(params: { child: Widget; edgeInsets: EdgeInsets }) {
 		super();
-		this._child = _.child;
-		this.edgeInsets = _.edgeInsets;
+		this._child = params.child;
+		this.edgeInsets = params.edgeInsets;
 	}
 }
 
@@ -138,11 +139,9 @@ export class Row extends MultiChildBaseFrame {
 		constraints: BoxConstraints,
 		children: FoundationElement[],
 	): BoxSize {
-		print("Row layout");
 		const selfSize = super._layout(frame, constraints, children);
 		const totalWidth = selfSize.X;
 		let childWidths = 0;
-		print("Childrens" + children.size());
 		const evenDivide = constraints.clone();
 		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
 		for (const child of children) {
@@ -160,9 +159,9 @@ export class Row extends MultiChildBaseFrame {
 		return selfSize;
 	}
 
-	constructor(_: { children: Array<Widget>; spreadEvenly?: boolean }) {
-		super(_.children);
-		this.spreadEvenly = _.spreadEvenly ?? this.spreadEvenly;
+	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
+		super(params.children);
+		this.spreadEvenly = params.spreadEvenly ?? this.spreadEvenly;
 	}
 }
 

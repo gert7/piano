@@ -1,9 +1,9 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
-import { HookWidget, StatefulWidget, StatelessWidget, Widget } from "./widget";
+import { HookWidget, Widget } from "./widget";
 import { BuildContext, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
-import { useState } from "./hook_primitives";
+import { useEffect, useMemoized, useRef, useState } from "./hook_primitives";
 
 const Players = game.GetService("Players");
 
@@ -20,7 +20,7 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	rootFrame.Parent = rootNode;
 
 	const rootElement = new RootElement((event) => {
-		print("event received");
+		print("Piano rootElement event received");
 	});
 	const homeElement = home.createElement();
 	rootElement.appendToRoot(homeElement);
@@ -41,18 +41,31 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 class CounterWidget extends HookWidget {
 	override build(context: BuildContext): Widget {
 		const [counter, setCounter] = useState(() => 0);
+		const textWidgets: Widget[] = useRef([]);
 
-		const incrementCounter = () => setCounter(counter + 1);
+		const incrementCounter = () => {
+			textWidgets.push(new TextWidget("Beep " + textWidgets.size()));
+			setCounter(counter + 1);
+		};
+		const decrementCounter = () => {
+			textWidgets.pop();
+			setCounter(counter - 1);
+		};
 
-		const textWidgets = [];
-		for (let i = 0; i < counter; i++) {
-			textWidgets.push(new TextWidget("Beep " + i));
-		}
+		useEffect(() => {
+			const add = new RobloxTextButton("Decremember" + counter, decrementCounter);
+			textWidgets.push(add);
+			return () => { };
+		}, []);
+
+		// for (let i = 0; i < counter; i++) {
+		// 	textWidgets.push(new TextWidget("Beep " + i));
+		// }
 
 		return new Row({
 			children: [
 				new RobloxTextButton("Hello from HookWidget: " + counter, incrementCounter),
-				...textWidgets,
+				new Row({ children: textWidgets }),
 			],
 		});
 	}

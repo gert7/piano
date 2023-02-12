@@ -8,14 +8,14 @@ export abstract class State<T extends StatefulWidget> {
 		this._element.markRebuild();
 	}
 
-	initState() { }
+	abstract initState(): void;
 
 	widget!: Widget;
 	_element!: StatefulElement;
 
 	abstract build(context: BuildContext): Widget;
 
-	didUpdateWidget(oldWidget: T): void { }
+	abstract didUpdateWidget(oldWidget: T): void;
 
-	dispose(): void { }
+	abstract dispose(): void;
 }

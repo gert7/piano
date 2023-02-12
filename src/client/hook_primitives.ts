@@ -47,14 +47,11 @@ export function useMemoized<T>(valueBuilder: () => T, keys?: Array<object>): T {
 	return use(new _MemoizedHook(valueBuilder, keys ?? []));
 }
 
-export function useRef<R>(value: R): ObjectRef<R> {
-	return use(new _MemoizedHook(() => new ObjectRef(value), []));
+export function useRef<R>(value: R): R {
+	return use(new _MemoizedHook(() => new ObjectRef(value), [])).value;
 }
 
-export function useCallback<F extends Callback>(
-	callback: Callback,
-	keys?: Array<object>,
-): Callback {
+export function useCallback(callback: Callback, keys?: Array<object>): Callback {
 	return use(new _MemoizedHook(() => callback, keys ?? []));
 }
 
