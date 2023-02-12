@@ -44,27 +44,29 @@ class CounterWidget extends HookWidget {
 		const textWidgets: Widget[] = useRef([]);
 
 		const incrementCounter = () => {
-			textWidgets.push(new TextWidget("Beep " + textWidgets.size()));
-			setCounter(counter + 1);
+			const a = new Padding({
+				edgeInsets: EdgeInsets.all(8.0),
+				child: new Padding({
+					edgeInsets: EdgeInsets.all(8.0),
+					child: new TextWidget("Beep"),
+				}),
+			});
+			textWidgets.push(a);
+			textWidgets.push(a);
+			textWidgets.push(a);
+			setCounter(counter + 3);
 		};
 		const decrementCounter = () => {
 			textWidgets.pop();
-			setCounter(counter - 1);
+			textWidgets.pop();
+			textWidgets.pop();
+			setCounter(counter - 3);
 		};
-
-		useEffect(() => {
-			const add = new RobloxTextButton("Decremember" + counter, decrementCounter);
-			textWidgets.push(add);
-			return () => { };
-		}, []);
-
-		// for (let i = 0; i < counter; i++) {
-		// 	textWidgets.push(new TextWidget("Beep " + i));
-		// }
 
 		return new Row({
 			children: [
 				new RobloxTextButton("Hello from HookWidget: " + counter, incrementCounter),
+				new RobloxTextButton("Decremember" + counter, decrementCounter),
 				new Row({ children: textWidgets }),
 			],
 		});

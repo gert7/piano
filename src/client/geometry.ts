@@ -5,6 +5,8 @@ export interface SizeConstraints {
 export type constraint = number | "Infinity";
 
 export class BoxConstraints implements SizeConstraints {
+	static Infinity: constraint = "Infinity";
+
 	minWidth: constraint;
 	maxWidth: constraint;
 	minHeight: constraint;
@@ -26,7 +28,7 @@ export class BoxConstraints implements SizeConstraints {
 		if (this.maxWidth !== "Infinity") {
 			return this.maxWidth;
 		} else {
-			return 999999;
+			return 9999;
 		}
 	}
 
@@ -34,7 +36,7 @@ export class BoxConstraints implements SizeConstraints {
 		if (this.maxWidth !== "Infinity") {
 			return this.maxWidth;
 		} else {
-			return 999999;
+			return 9999;
 		}
 	}
 
@@ -61,13 +63,13 @@ export class EdgeInsets {
 	/** Left in left-to-right context */
 	start: number;
 	/** Right in left-to-right context */
-	end: number;
+	ending: number;
 	top: number;
 	bottom: number;
 
 	constructor(insets: { start: number; end: number; top: number; bottom: number }) {
 		this.start = insets.start ?? 0.0;
-		this.end = insets.end ?? 0.0;
+		this.ending = insets.end ?? 0.0;
 		this.top = insets.top ?? 0.0;
 		this.bottom = insets.bottom ?? 0.0;
 	}

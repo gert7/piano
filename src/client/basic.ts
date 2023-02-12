@@ -55,10 +55,12 @@ export class BaseFrame extends SingleChildFoundationWidget {
 		return expandRbxComponentToConstraints(frame, constraints);
 	}
 
-	override createComponent(context: BuildContext): Frame {
-		const frame = new Instance("Frame");
+	override createComponent(context: BuildContext): ScrollingFrame {
+		const frame = new Instance("ScrollingFrame");
 		frame.BackgroundTransparency = 1.0;
 		frame.Size = new UDim2(0, 1, 0, 1);
+		frame.ScrollBarThickness = 0;
+		frame.ScrollingEnabled = false;
 		return frame;
 	}
 }
@@ -101,16 +103,16 @@ export class Padding extends BaseFrame {
 		let newHeight = frame.Size.Width.Offset;
 		if (constraints) {
 			if (constraints.maxWidth !== "Infinity") {
-				newWidth = constraints.maxWidth - (this.edgeInsets.start + this.edgeInsets.end);
+				newWidth = constraints.maxWidth - (this.edgeInsets.start + this.edgeInsets.ending);
 				if (newWidth < 0) {
-					print("Warning: 0-width Padding");
+					// print("Warning: 0-width Padding");
 					newWidth = 0;
 				}
 			}
 			if (constraints.maxHeight !== "Infinity") {
 				newHeight = constraints.maxHeight - (this.edgeInsets.top + this.edgeInsets.bottom);
 				if (newHeight < 0) {
-					print("Warning: 0-height Padding");
+					// print("Warning: 0-height Padding");
 					newHeight = 0;
 				}
 			}
