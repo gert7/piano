@@ -2,9 +2,6 @@ import {
 	BuildContext,
 	Element,
 	FoundationElement,
-	LeafFoundationElement,
-	MultiChildFoundationElement,
-	SingleChildFoundationElement,
 	StatefulElement,
 	StatelessElement,
 } from "./element";
@@ -18,6 +15,11 @@ export interface Widget {
 	createElement(): Element;
 }
 
+/** A {@link Widget} that corresponds to a
+ * {@link RbxComponent | Roblox Component}. Can have 0 or more children.
+ *
+ * If the `_children` array becomes `undefined` rather than empty during a
+ * rebuild, the children will *not* be updated in the {@link Element} tree. */
 export abstract class FoundationWidget implements Widget {
 	_layout(
 		component: RbxComponent,
@@ -25,6 +27,12 @@ export abstract class FoundationWidget implements Widget {
 		children: Array<FoundationElement>,
 	): BoxSize {
 		return component.AbsoluteSize;
+	}
+
+	_children?: Array<Widget>;
+
+	children(): Array<Widget> | undefined {
+		return this._children;
 	}
 
 	createElement(): Element {
@@ -36,44 +44,8 @@ export abstract class FoundationWidget implements Widget {
 	updateComponent(context: BuildContext, component: RbxComponent): boolean {
 		return false;
 	}
-}
 
-export abstract class LeafFoundationWidget extends FoundationWidget {
-	createElement(): Element {
-		return new LeafFoundationElement(this);
-	}
-}
-
-export abstract class SingleChildFoundationWidget extends FoundationWidget {
-	protected _child?: Widget;
-
-	child(): Widget | undefined {
-		return this._child;
-	}
-
-	createElement(): Element {
-		return new SingleChildFoundationElement(this);
-	}
-
-	constructor(child?: Widget) {
-		super();
-		this._child = child;
-	}
-}
-
-export abstract class MultiChildFoundationWidget extends FoundationWidget {
-	_children: Array<Widget>;
-
-	children(): Array<Widget> {
-		return this._children;
-	}
-
-	createElement(): Element {
-		return new MultiChildFoundationElement(this);
-	}
-
-	constructor(children: Array<Widget>) {
-		super();
+	constructor(children?: Array<Widget>) {
 		this._children = children;
 	}
 }

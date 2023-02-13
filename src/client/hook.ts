@@ -84,16 +84,12 @@ export class HookElement extends ComposingElement {
 
 	override rebuild() {
 		if (!this._dirty) return;
-		if (this.owner) {
-			HookElement.activeHookElement = this;
-			const child = this.widget.build(this);
-			this.updateChild(0, undefined, child, undefined);
-			this._hookCounter = 0;
-			super.rebuild();
-			HookElement.activeHookElement = undefined;
-		} else {
-			print("Error: HookElement has no Build Owner");
-		}
+		HookElement.activeHookElement = this;
+		const child = this.widget.build(this);
+		this.updateChild(0, undefined, child, undefined);
+		this._hookCounter = 0;
+		super.rebuild();
+		HookElement.activeHookElement = undefined;
 	}
 
 	constructor(widget: HookWidget) {

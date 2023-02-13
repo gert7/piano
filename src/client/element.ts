@@ -3,9 +3,6 @@ import { State } from "./state";
 import { RbxComponent } from "./types";
 import {
 	FoundationWidget,
-	LeafFoundationWidget,
-	MultiChildFoundationWidget,
-	SingleChildFoundationWidget,
 	StatefulWidget,
 	StatelessWidget,
 	Widget,
@@ -15,12 +12,18 @@ export abstract class Element {
 	widget?: Widget;
 	slot?: object;
 
-	_parent?: Element;
+	protected _parent?: Element;
 	_children: Array<Element> = [];
 	protected _mounted = false;
 	protected _oldWidget?: Widget;
-	_dirty = true;
-	owner?: RootElement;
+	protected _dirty = true;
+	isDirty() {
+		return this._dirty;
+	}
+	private _owner?: RootElement;
+	// owner(): RootElement | undefined {
+	// 	return this._owner;
+	// }
 
 	/** Attempts to return the name of the Widget, or "Unknown widget" if the
 	 * Widget is null */
@@ -39,7 +42,7 @@ export abstract class Element {
 		}
 		out += "/";
 		if (this.widget) {
-			out += getmetatable(this.widget);
+			out += this.widgetName();
 		} else {
 			out += "Unknown widget?";
 		}
@@ -81,8 +84,7 @@ export abstract class Element {
 
 	inflateWidget(widget: Widget, index?: number): Element {
 		const element = widget.createElement();
-		element._parent = this;
-		element.owner = this.owner;
+		element.mount(this);
 		element.update(widget);
 		index !== undefined ? (this._children[index] = element) : this._children.push(element);
 		// print(`Inflated ${getmetatable(widget)}`);
@@ -93,6 +95,12 @@ export abstract class Element {
 		this._oldWidget = this.widget;
 		this.widget = widget;
 		return;
+	}
+
+	mount(parent: Element, owner?: RootElement) {
+		this._parent = parent;
+		this._owner = owner ? owner : parent._owner;
+		this._mounted = true;
 	}
 
 	unmount() {
@@ -143,7 +151,7 @@ export abstract class Element {
 
 	markRebuild() {
 		this._dirty = true;
-		this.owner?.addToRebuild(this);
+		this._owner?.addToRebuild(this);
 	}
 
 	rebuild() {
@@ -163,10 +171,18 @@ export type BuildContext = Element;
 
 export class FoundationElement extends Element {
 	widget: FoundationWidget;
-	component: RbxComponent;
+	private component: RbxComponent;
 	constraints?: BoxConstraints;
 	connections: Map<string, RBXScriptConnection> = new Map();
 	componentParentElement?: Element;
+
+	position(): Vector2 {
+		return new Vector2(this.component.Position.X.Offset, this.component.Position.Y.Offset);
+	}
+
+	setPosition(position: UDim2) {
+		this.component.Position = position;
+	}
 
 	removeConnection(key: string): boolean {
 		const existing = this.connections.get(key);
@@ -194,9 +210,10 @@ export class FoundationElement extends Element {
 		return this;
 	}
 
-	override update(widget: Widget): void {
+	override update(widget: FoundationWidget): void {
 		super.update(widget);
 		this.widget.updateComponent(this, this.component);
+		this.updateChildren(widget.children(), undefined);
 		// if (this.constraints) {
 		// print("Layout");
 		// this.layout(this.constraints);
@@ -250,7 +267,8 @@ export class FoundationElement extends Element {
 		this.component.Destroy();
 	}
 
-	updateChildren(newChildren: Array<Widget>, slots?: Array<object>) {
+	updateChildren(newChildren?: Array<Widget>, slots?: Array<object>) {
+		if (newChildren === undefined) return;
 		for (let i = 0; i < newChildren.size(); i++) {
 			const slot = slots ? slots[i] : undefined;
 			this.updateChild(i, undefined, newChildren[i], slot);
@@ -269,37 +287,6 @@ export class FoundationElement extends Element {
 		super();
 		this.widget = widget;
 		this.component = widget.createComponent(this);
-	}
-}
-
-export class LeafFoundationElement extends FoundationElement {
-	constructor(widget: LeafFoundationWidget) {
-		super(widget);
-		this.widget = widget;
-	}
-}
-
-export class SingleChildFoundationElement extends FoundationElement {
-	override update(widget: SingleChildFoundationWidget): void {
-		super.update(widget);
-		this.updateChild(0, undefined, widget.child(), undefined);
-	}
-
-	constructor(widget: SingleChildFoundationWidget) {
-		super(widget);
-		this.widget = widget;
-	}
-}
-
-export class MultiChildFoundationElement extends FoundationElement {
-	override update(widget: MultiChildFoundationWidget): void {
-		super.update(widget);
-		this.updateChildren(widget.children(), undefined);
-	}
-
-	constructor(widget: MultiChildFoundationWidget) {
-		super(widget);
-		this.widget = widget;
 	}
 }
 
@@ -378,8 +365,7 @@ export class RootElement extends Element {
 
 	appendToRoot(element: Element) {
 		this._children[0] = element;
-		this._children[0]._parent = this;
-		this._children[0].owner = this;
+		this._children[0].mount(this, this);
 	}
 
 	addToRebuild(element: Element) {
@@ -394,7 +380,7 @@ export class RootElement extends Element {
 		if (this.timePassed > this.interval || force) {
 			this.timePassed = 0.0;
 			for (const element of this.elementsToRebuild) {
-				if (element && element._dirty) {
+				if (element && element.isDirty()) {
 					element.rebuild();
 				} else {
 					continue;

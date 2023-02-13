@@ -1,18 +1,13 @@
-import { BuildContext, Element, FoundationElement, LeafFoundationElement } from "./element";
+import { BuildContext, Element, FoundationElement } from "./element";
 import { BoxConstraints, BoxSize, EdgeInsets } from "./geometry";
 import { RbxComponent } from "./types";
-import {
-	LeafFoundationWidget,
-	MultiChildFoundationWidget,
-	SingleChildFoundationWidget,
-	Widget,
-} from "./widget";
+import { FoundationWidget, Widget } from "./widget";
 
-export class TextWidget extends LeafFoundationWidget {
+export class TextWidget extends FoundationWidget {
 	text: string;
 
 	constructor(text: string) {
-		super();
+		super([]);
 		this.text = text;
 	}
 
@@ -46,7 +41,7 @@ export function expandRbxComponentToConstraints(
 	return component.AbsoluteSize;
 }
 
-export class BaseFrame extends SingleChildFoundationWidget {
+export class BaseFrame extends FoundationWidget {
 	override _layout(
 		frame: RbxComponent,
 		constraints: BoxConstraints,
@@ -57,15 +52,16 @@ export class BaseFrame extends SingleChildFoundationWidget {
 
 	override createComponent(context: BuildContext): ScrollingFrame {
 		const frame = new Instance("ScrollingFrame");
-		frame.BackgroundTransparency = 1.0;
+		frame.BackgroundTransparency = 1;
 		frame.Size = new UDim2(0, 1, 0, 1);
 		frame.ScrollBarThickness = 0;
 		frame.ScrollingEnabled = false;
+		frame.BorderMode = Enum.BorderMode.Inset;
 		return frame;
 	}
 }
 
-export class MultiChildBaseFrame extends MultiChildFoundationWidget {
+export class MultiChildBaseFrame extends FoundationWidget {
 	override _layout(
 		frame: RbxComponent,
 		constraints: BoxConstraints,
@@ -121,13 +117,19 @@ export class Padding extends BaseFrame {
 		}
 		frame.Size = new UDim2(0, newWidth, 0, newHeight);
 		frame.Position = new UDim2(0, this.edgeInsets.start, 0, this.edgeInsets.top);
-		children.forEach((c) => c.layout(BoxConstraints.fromVec2(frame.AbsoluteSize)));
+		const absSize = frame.AbsoluteSize;
+		const childConstraint = BoxConstraints.fromVector2(
+			new Vector2(absSize.X - 2, absSize.Y - 2),
+		);
+		children.forEach((c) => c.layout(childConstraint));
+		// children.forEach(
+		// 	(c) => (c.component.Position = c.component.Position.add(new UDim2(0, 1, 0, 1))),
+		// );
 		return frame.AbsoluteSize;
 	}
 
 	constructor(params: { child: Widget; edgeInsets: EdgeInsets }) {
-		super();
-		this._child = params.child;
+		super([params.child]);
 		this.edgeInsets = params.edgeInsets;
 	}
 }
@@ -146,18 +148,19 @@ export class Row extends MultiChildBaseFrame {
 		let childWidths = 0;
 		const evenDivide = constraints.clone();
 		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
+		const sizes: Vector2[] = [];
 		for (const child of children) {
 			const size = child.layout(evenDivide);
+			sizes.push(size);
 			childWidths += size.X;
 		}
 		const spacing = (totalWidth - childWidths) / (children.size() + 1);
 		let x = spacing;
-		for (const child of children) {
-			const y = child.component.Position.Y.Offset;
-			child.component.Position = new UDim2(0, x, 0, y);
-			x += child.component.AbsoluteSize.X;
+		children.forEach((child, i) => {
+			child.setPosition(new UDim2(0, x, 0, child.position().Y));
+			x += sizes[i].X;
 			x += spacing;
-		}
+		});
 		return selfSize;
 	}
 
@@ -167,9 +170,9 @@ export class Row extends MultiChildBaseFrame {
 	}
 }
 
-export class RobloxComponentWidget extends LeafFoundationWidget {
+export class RobloxComponentWidget extends FoundationWidget {
 	createElement(): Element {
-		return new LeafFoundationElement(this);
+		return new FoundationElement(this);
 	}
 
 	override createComponent(context: Element): GuiObject {
@@ -180,7 +183,7 @@ export class RobloxComponentWidget extends LeafFoundationWidget {
 		if (this.layout) {
 			return expandRbxComponentToConstraints(component, constraints);
 		}
-		return constraints.toVec2();
+		return constraints.toVector2();
 	}
 
 	component: GuiObject;

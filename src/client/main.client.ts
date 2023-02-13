@@ -1,9 +1,9 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
 import { HookWidget, Widget } from "./widget";
-import { BuildContext, RootElement } from "./element";
+import { BuildContext, Element, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
-import { useEffect, useMemoized, useRef, useState } from "./hook_primitives";
+import { useRef, useState } from "./hook_primitives";
 
 const Players = game.GetService("Players");
 
@@ -13,10 +13,12 @@ const ScreenGui = new Instance("ScreenGui");
 ScreenGui.Parent = PlayerGui;
 
 export function mount(rootNode: GuiBase2d, home: Widget) {
-	const rootFrame = new Instance("Frame");
+	const rootFrame = new Instance("ScrollingFrame");
 	rootFrame.Position = new UDim2(0, 0, 0, 0);
 	rootFrame.Size = new UDim2(1, 0, 1, 0);
 	rootFrame.BackgroundTransparency = 1.0;
+	rootFrame.ScrollingEnabled = false;
+	rootFrame.ScrollBarThickness = 0;
 	rootFrame.Parent = rootNode;
 
 	const rootElement = new RootElement((event) => {
@@ -36,6 +38,18 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	foundationRoot.attachComponents(rootFrame);
 	foundationRoot.layout(constraints);
 	rootElement.debugPrint();
+}
+
+class OneChild extends HookWidget {
+	build(context: Element): Widget {
+		return new TextWidget("What is going on");
+	}
+}
+
+class TwoChild extends HookWidget {
+	build(context: Element): Widget {
+		return new Padding({ edgeInsets: EdgeInsets.all(8.0), child: new OneChild() });
+	}
 }
 
 class CounterWidget extends HookWidget {
@@ -73,10 +87,27 @@ class CounterWidget extends HookWidget {
 	}
 }
 
+class TreeYoyoWidget extends HookWidget {
+	build(context: Element): Widget {
+		const [state, setState] = useState(() => 0);
+
+		function flip() {
+			if (state === 0) setState(1);
+			else setState(0);
+		}
+
+		const child = state === 0 ? new OneChild() : new TwoChild();
+
+		return new Row({
+			children: [new RobloxTextButton("Flip", flip), child],
+		});
+	}
+}
+
 class HomeWidget extends HookWidget {
 	override build(): Widget {
 		return new Padding({
-			edgeInsets: EdgeInsets.all(64.0),
+			edgeInsets: EdgeInsets.all(8.0),
 			child: new CounterWidget(),
 		});
 	}

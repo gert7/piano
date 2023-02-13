@@ -48,11 +48,11 @@ export class BoxConstraints implements SizeConstraints {
 		return this.minWidth === this.maxWidth && this.minHeight === this.maxHeight;
 	}
 
-	static fromVec2(vec2: Vector2): BoxConstraints {
+	static fromVector2(vec2: Vector2): BoxConstraints {
 		return new BoxConstraints(0, vec2.X, 0, vec2.Y);
 	}
 
-	toVec2(): Vector2 {
+	toVector2(): Vector2 {
 		return new Vector2(this.maxWidthN(), this.maxHeightN());
 	}
 }
