@@ -1,14 +1,34 @@
 import { BuildContext, Element, FoundationElement } from "./element";
-import { BoxConstraints, BoxSize, EdgeInsets } from "./geometry";
+import { BoxConstraints, BoxSize, clampToConstraints, EdgeInsets } from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget, Widget } from "./widget";
 
 export class TextWidget extends FoundationWidget {
 	text: string;
+	private _cachedSize?: BoxSize;
 
 	constructor(text: string) {
-		super([]);
+		super();
 		this.text = text;
+	}
+
+	override updateComponent(context: Element, component: GuiObject, oldWidget?: Widget): boolean {
+		const old = oldWidget as TextWidget;
+		if (oldWidget && old.text !== this.text) {
+			this._cachedSize = undefined;
+		}
+		return true;
+	}
+
+	_layout(
+		component: GuiObject,
+		constraints: BoxConstraints,
+		children: FoundationElement[],
+	): Vector2 {
+		if (!this._cachedSize) {
+			this._cachedSize = component.AbsoluteSize;
+		}
+		return this._cachedSize;
 	}
 
 	override createComponent(context: BuildContext): RbxComponent {
@@ -21,6 +41,12 @@ export class TextWidget extends FoundationWidget {
 		text.AutomaticSize = Enum.AutomaticSize.XY;
 		return text;
 	}
+
+}
+
+function getRelativeSize(component: RbxComponent): [number, number] {
+	const size = component.Size;
+	return [size.X.Offset, size.Y.Offset];
 }
 
 export function expandRbxComponentToConstraints(
@@ -29,8 +55,7 @@ export function expandRbxComponentToConstraints(
 	width = true,
 	height = true,
 ): BoxSize {
-	let newWidth = component.Size.Width.Offset;
-	let newHeight = component.Size.Width.Offset;
+	let [newWidth, newHeight] = getRelativeSize(component);
 	if (width && constraints.maxWidth !== "Infinity") {
 		newWidth = constraints.maxWidth;
 	}
@@ -38,7 +63,7 @@ export function expandRbxComponentToConstraints(
 		newHeight = constraints.maxHeight;
 	}
 	component.Size = new UDim2(0, newWidth, 0, newHeight);
-	return component.AbsoluteSize;
+	return constraints.toVector2();
 }
 
 export class BaseFrame extends FoundationWidget {
@@ -61,71 +86,42 @@ export class BaseFrame extends FoundationWidget {
 	}
 }
 
-export class MultiChildBaseFrame extends FoundationWidget {
-	override _layout(
-		frame: RbxComponent,
-		constraints: BoxConstraints,
-		children: Array<FoundationElement>,
-	): BoxSize {
-		let newWidth = frame.Size.Width.Offset;
-		let newHeight = frame.Size.Height.Offset;
-		if (constraints.maxWidth !== "Infinity") {
-			newWidth = constraints.maxWidth;
-		}
-		if (constraints.maxHeight !== "Infinity") {
-			newHeight = constraints.maxHeight;
-		}
-		frame.Size = new UDim2(0, newWidth, 0, newHeight);
-		return frame.AbsoluteSize;
-	}
-
-	override createComponent(context: BuildContext): Frame {
-		const frame = new Instance("Frame");
-		frame.BackgroundTransparency = 1.0;
-		frame.Size = new UDim2(0, 1, 0, 1);
-		return frame;
-	}
-}
-
 export class Padding extends BaseFrame {
 	private edgeInsets: EdgeInsets;
 
 	override _layout(
 		frame: RbxComponent,
 		constraints: BoxConstraints,
-		children: FoundationElement[],
+		children: FoundationElement[], // TODO: pass children indirectly
 	): BoxSize {
-		let newWidth = frame.Size.Width.Offset;
-		let newHeight = frame.Size.Width.Offset;
-		if (constraints) {
-			if (constraints.maxWidth !== "Infinity") {
-				newWidth = constraints.maxWidth - (this.edgeInsets.start + this.edgeInsets.ending);
-				if (newWidth < 0) {
-					// print("Warning: 0-width Padding");
-					newWidth = 0;
-				}
+		let [paddedW, paddedH] = getRelativeSize(frame);
+		const horizontalPadding = this.edgeInsets.start + this.edgeInsets.ending;
+		const verticalPadding = this.edgeInsets.top + this.edgeInsets.bottom;
+		if (constraints.maxWidth !== "Infinity") {
+			paddedW = constraints.maxWidth - horizontalPadding;
+			if (paddedW < 0) {
+				// print("Warning: 0-width Padding");
+				paddedW = 0;
 			}
-			if (constraints.maxHeight !== "Infinity") {
-				newHeight = constraints.maxHeight - (this.edgeInsets.top + this.edgeInsets.bottom);
-				if (newHeight < 0) {
-					// print("Warning: 0-height Padding");
-					newHeight = 0;
-				}
-			}
-		} else {
-			print("Error: No constraints received from element at Padding");
 		}
-		frame.Size = new UDim2(0, newWidth, 0, newHeight);
+		if (constraints.maxHeight !== "Infinity") {
+			paddedH = constraints.maxHeight - verticalPadding;
+			if (paddedH < 0) {
+				// print("Warning: 0-height Padding");
+				paddedH = 0;
+			}
+		}
 		frame.Position = new UDim2(0, this.edgeInsets.start, 0, this.edgeInsets.top);
-		const absSize = frame.AbsoluteSize;
-		const childConstraint = BoxConstraints.fromVector2(
-			new Vector2(absSize.X - 2, absSize.Y - 2),
-		);
-		children.forEach((c) => c.layout(childConstraint));
-		// children.forEach(
-		// 	(c) => (c.component.Position = c.component.Position.add(new UDim2(0, 1, 0, 1))),
-		// );
-		return frame.AbsoluteSize;
+		const childConstraint = BoxConstraints.fromVector2(new Vector2(paddedW - 2, paddedH - 2));
+		const childSize = children[0].layout(childConstraint);
+		// if (!constraints.checkConstraints(childSize)) {
+		// 	print("Child of Padding doesn't match constraints");
+		// }
+		const newWidth = childSize.X + horizontalPadding;
+		const newHeight = childSize.Y + verticalPadding;
+		const clamp = clampToConstraints(new Vector2(newWidth, newHeight), constraints);
+		frame.Size = new UDim2(0, clamp.X, 0, clamp.Y);
+		return new Vector2(newWidth, newHeight);
 	}
 
 	constructor(params: { child: Widget; edgeInsets: EdgeInsets }) {
@@ -134,7 +130,7 @@ export class Padding extends BaseFrame {
 	}
 }
 
-export class Row extends MultiChildBaseFrame {
+export class Row extends BaseFrame {
 	spreadEvenly = false;
 	desiredSpace = 8.0;
 
@@ -143,6 +139,7 @@ export class Row extends MultiChildBaseFrame {
 		constraints: BoxConstraints,
 		children: FoundationElement[],
 	): BoxSize {
+		debug.profilebegin("PianoRowLayout");
 		const selfSize = super._layout(frame, constraints, children);
 		const totalWidth = selfSize.X;
 		let childWidths = 0;
@@ -161,6 +158,7 @@ export class Row extends MultiChildBaseFrame {
 			x += sizes[i].X;
 			x += spacing;
 		});
+		debug.profileend();
 		return selfSize;
 	}
 

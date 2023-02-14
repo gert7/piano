@@ -3,7 +3,7 @@ import { Error } from "./error";
 import { Hook, HookElement, HookState, use } from "./hook";
 
 export class ObjectRef<T> {
-	readonly value: T;
+	value: T;
 
 	constructor(value: T) {
 		this.value = value;
@@ -47,8 +47,8 @@ export function useMemoized<T>(valueBuilder: () => T, keys?: Array<object>): T {
 	return use(new _MemoizedHook(valueBuilder, keys ?? []));
 }
 
-export function useRef<R>(value: R): R {
-	return use(new _MemoizedHook(() => new ObjectRef(value), [])).value;
+export function useRef<R>(value: R): ObjectRef<R> {
+	return use(new _MemoizedHook(() => new ObjectRef(value), []));
 }
 
 export function useCallback(callback: Callback, keys?: Array<object>): Callback {

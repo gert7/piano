@@ -5,7 +5,7 @@ import {
 	StatefulElement,
 	StatelessElement,
 } from "./element";
-import { BoxConstraints, BoxSize } from "./geometry";
+import { BoxConstraints, BoxSize, udim2Vector2 } from "./geometry";
 import { HookElement } from "./hook";
 import { State } from "./state";
 import { RbxComponent } from "./types";
@@ -26,7 +26,7 @@ export abstract class FoundationWidget implements Widget {
 		constraints: BoxConstraints,
 		children: Array<FoundationElement>,
 	): BoxSize {
-		return component.AbsoluteSize;
+		return udim2Vector2(component.Size);
 	}
 
 	_children?: Array<Widget>;
@@ -41,7 +41,7 @@ export abstract class FoundationWidget implements Widget {
 
 	abstract createComponent(context: BuildContext): RbxComponent;
 
-	updateComponent(context: BuildContext, component: RbxComponent): boolean {
+	updateComponent(context: BuildContext, component: RbxComponent, oldWidget?: Widget): boolean {
 		return false;
 	}
 

@@ -1,4 +1,4 @@
-import { BuildContext, ComposingElement } from "./element";
+import { BuildContext, Element } from "./element";
 import { Error } from "./error";
 import { HookWidget } from "./widget";
 
@@ -26,7 +26,7 @@ export function use<R>(hook: Hook<R>): R {
 	return HookElement.useHook(hook);
 }
 
-export class HookElement extends ComposingElement {
+export class HookElement extends Element {
 	/** Map of active HookElements based on the Build Owner. */
 	static activeHookElement?: HookElement;
 

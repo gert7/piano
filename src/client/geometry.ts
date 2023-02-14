@@ -55,9 +55,35 @@ export class BoxConstraints implements SizeConstraints {
 	toVector2(): Vector2 {
 		return new Vector2(this.maxWidthN(), this.maxHeightN());
 	}
+
+	checkConstraints(boxSize: BoxSize): boolean {
+		if (
+			boxSize.X > this.maxWidth ||
+			boxSize.Y > this.maxHeight ||
+			boxSize.X < this.minWidth ||
+			boxSize.Y < this.minHeight
+		)
+			return false;
+		return true;
+	}
 }
 
 export type BoxSize = Vector2;
+
+export function udim2Vector2(udim2: UDim2): Vector2 {
+	return new Vector2(udim2.X.Offset, udim2.Y.Offset);
+}
+
+export function clampToConstraints(size: BoxSize, constraints: BoxConstraints): BoxSize {
+	let [newWidth, newHeight] = [size.X, size.Y];
+	if (newWidth > constraints.maxWidth) {
+		newWidth = constraints.maxWidthN();
+	}
+	if (newHeight > constraints.maxHeight) {
+		newHeight = constraints.maxHeightN();
+	}
+	return new Vector2(newWidth, newHeight);
+}
 
 export class EdgeInsets {
 	/** Left in left-to-right context */

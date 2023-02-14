@@ -27,16 +27,15 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	const homeElement = home.createElement();
 	rootElement.appendToRoot(homeElement);
 	homeElement.update(home);
+	const absSize = rootFrame.AbsoluteSize;
 
-	const constraints = new BoxConstraints(
-		0.0,
-		rootFrame.AbsoluteSize.X,
-		0.0,
-		rootFrame.AbsoluteSize.Y,
-	);
+	const constraints = new BoxConstraints(0.0, absSize.X, 0.0, absSize.Y);
 	const foundationRoot = rootElement.findChildWithComponent();
 	foundationRoot.attachComponents(rootFrame);
 	foundationRoot.layout(constraints);
+	rootFrame
+		.GetPropertyChangedSignal("AbsoluteSize")
+		.Connect(() => foundationRoot.layout(BoxConstraints.fromVector2(rootFrame.AbsoluteSize)));
 	rootElement.debugPrint();
 }
 
@@ -55,27 +54,35 @@ class TwoChild extends HookWidget {
 class CounterWidget extends HookWidget {
 	override build(context: BuildContext): Widget {
 		const [counter, setCounter] = useState(() => 0);
-		const textWidgets: Widget[] = useRef([]);
+		const textWidgets: Widget[] = useRef([]).value;
 
+		debug.profilebegin("CounterWidgetInsert");
 		const incrementCounter = () => {
 			const a = new Padding({
 				edgeInsets: EdgeInsets.all(8.0),
 				child: new Padding({
 					edgeInsets: EdgeInsets.all(8.0),
-					child: new TextWidget("Beep"),
+					child: new TextWidget(`${counter}`),
 				}),
 			});
 			textWidgets.push(a);
 			textWidgets.push(a);
 			textWidgets.push(a);
-			setCounter(counter + 3);
+			textWidgets.push(a);
+			textWidgets.push(a);
+			textWidgets.push(a);
+			setCounter(counter + 6);
 		};
 		const decrementCounter = () => {
 			textWidgets.pop();
 			textWidgets.pop();
 			textWidgets.pop();
-			setCounter(counter - 3);
+			textWidgets.pop();
+			textWidgets.pop();
+			textWidgets.pop();
+			setCounter(counter - 6);
 		};
+		debug.profileend();
 
 		return new Row({
 			children: [

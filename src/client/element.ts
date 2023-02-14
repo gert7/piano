@@ -1,12 +1,7 @@
 import { BoxConstraints, BoxSize } from "./geometry";
 import { State } from "./state";
 import { RbxComponent } from "./types";
-import {
-	FoundationWidget,
-	StatefulWidget,
-	StatelessWidget,
-	Widget,
-} from "./widget";
+import { FoundationWidget, StatefulWidget, StatelessWidget, Widget } from "./widget";
 
 export abstract class Element {
 	widget?: Widget;
@@ -184,6 +179,10 @@ export class FoundationElement extends Element {
 		this.component.Position = position;
 	}
 
+	absoluteSize(): BoxSize {
+		return this.component.AbsoluteSize;
+	}
+
 	removeConnection(key: string): boolean {
 		const existing = this.connections.get(key);
 		if (existing) {
@@ -212,7 +211,7 @@ export class FoundationElement extends Element {
 
 	override update(widget: FoundationWidget): void {
 		super.update(widget);
-		this.widget.updateComponent(this, this.component);
+		this.widget.updateComponent(this, this.component, this._oldWidget);
 		this.updateChildren(widget.children(), undefined);
 		// if (this.constraints) {
 		// print("Layout");
@@ -252,7 +251,7 @@ export class FoundationElement extends Element {
 	// }
 
 	override attachComponents(parent: GuiObject) {
-		print(`attachComponents called on ${this.widgetName()}`);
+		// print(`attachComponents called on ${this.widgetName()}`);
 		this.component.Parent = parent;
 		for (const child of this._children) {
 			child.attachComponents(this.component);
@@ -290,12 +289,7 @@ export class FoundationElement extends Element {
 	}
 }
 
-/** Element superclass for Widgets that *compose* other widgets. Composing
- * Widgets are Widgets with a `build()` method.
- */
-export abstract class ComposingElement extends Element { }
-
-export class StatelessElement extends ComposingElement {
+export class StatelessElement extends Element {
 	widget: StatelessWidget;
 
 	override update(widget: StatelessWidget): void {
@@ -316,7 +310,7 @@ export class StatelessElement extends ComposingElement {
 	}
 }
 
-export class StatefulElement extends ComposingElement {
+export class StatefulElement extends Element {
 	widget: StatefulWidget;
 	state: State<StatefulWidget>;
 
@@ -377,24 +371,25 @@ export class RootElement extends Element {
 	}
 
 	manageTree(deltaTime: number, force = false) {
-		if (this.timePassed > this.interval || force) {
-			this.timePassed = 0.0;
-			for (const element of this.elementsToRebuild) {
-				if (element && element.isDirty()) {
-					element.rebuild();
-				} else {
-					continue;
-				}
-				const withComponent = element?.findChildWithComponent();
-				const constraints = withComponent?.constraints;
-				if (constraints) {
-					withComponent?.layout(constraints);
-				}
+		// if (this.timePassed > this.interval || force) {
+		// this.timePassed = 0.0;
+		for (const element of this.elementsToRebuild) {
+			if (element && element.isDirty()) {
+				element.rebuild();
+			} else {
+				continue;
 			}
-			this.elementsToRebuild.clear();
-		} else {
-			this.timePassed += deltaTime;
+			const withComponent = element?.findChildWithComponent();
+			const constraints = withComponent?.constraints;
+			if (constraints) {
+				withComponent?.layout(constraints);
+			}
 		}
+		this.elementsToRebuild.clear();
+		wait();
+		// } else {
+		// 	this.timePassed += deltaTime;
+		// }
 	}
 
 	constructor(eventHandler: (event: string) => void) {
