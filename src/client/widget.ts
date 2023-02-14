@@ -25,9 +25,9 @@ export abstract class FoundationWidget implements Widget {
 		component: RbxComponent,
 		constraints: BoxConstraints,
 		children: Array<FoundationElement>,
-	): BoxSize {
-		return udim2Vector2(component.Size);
-	}
+	): void { }
+
+	abstract _size(component: RbxComponent): BoxSize;
 
 	_children?: Array<Widget>;
 

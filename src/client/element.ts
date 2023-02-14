@@ -179,10 +179,6 @@ export class FoundationElement extends Element {
 		this.component.Position = position;
 	}
 
-	absoluteSize(): BoxSize {
-		return this.component.AbsoluteSize;
-	}
-
 	removeConnection(key: string): boolean {
 		const existing = this.connections.get(key);
 		if (existing) {
@@ -211,7 +207,15 @@ export class FoundationElement extends Element {
 
 	override update(widget: FoundationWidget): void {
 		super.update(widget);
-		this.widget.updateComponent(this, this.component, this._oldWidget);
+		const couldUpdate = this.widget.updateComponent(this, this.component, this._oldWidget);
+		// if (!couldUpdate) {
+		// 	const oldComponent = this.component;
+		// 	this.component = this.widget.createComponent(this);
+		// 	this.attachChildren();
+		// 	this._parent?.connectComponentToParent(this.component);
+		// 	oldComponent.Destroy();
+		// }
+		// TODO: Recreate Component if updateComponent fails
 		this.updateChildren(widget.children(), undefined);
 		// if (this.constraints) {
 		// print("Layout");
@@ -223,10 +227,14 @@ export class FoundationElement extends Element {
 		}
 	}
 
-	layout(constraints: BoxConstraints): BoxSize {
+	layout(constraints: BoxConstraints) {
 		// print(`Layout on ${this.widgetName()}`);
 		this.constraints = constraints;
-		return this.widget._layout(this.component, constraints, this.findChildrenWithComponents());
+		this.widget._layout(this.component, constraints, this.findChildrenWithComponents());
+	}
+
+	size(): BoxSize {
+		return this.widget._size(this.component);
 	}
 
 	override rebuild(): void {
@@ -250,12 +258,17 @@ export class FoundationElement extends Element {
 	// 	}
 	// }
 
-	override attachComponents(parent: GuiObject) {
-		// print(`attachComponents called on ${this.widgetName()}`);
-		this.component.Parent = parent;
+	/** Attach all children to the component. */
+	attachChildren() {
 		for (const child of this._children) {
 			child.attachComponents(this.component);
 		}
+	}
+
+	override attachComponents(parent: GuiObject) {
+		// print(`attachComponents called on ${this.widgetName()}`);
+		this.component.Parent = parent;
+		this.attachChildren();
 	}
 
 	override unmount(): void {

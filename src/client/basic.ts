@@ -1,34 +1,23 @@
 import { BuildContext, Element, FoundationElement } from "./element";
-import { BoxConstraints, BoxSize, clampToConstraints, EdgeInsets } from "./geometry";
+import { BoxConstraints, BoxSize, clampToConstraints, EdgeInsets, udim2Vector2 } from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget, Widget } from "./widget";
 
 export class TextWidget extends FoundationWidget {
 	text: string;
-	private _cachedSize?: BoxSize;
 
 	constructor(text: string) {
 		super();
 		this.text = text;
 	}
 
-	override updateComponent(context: Element, component: GuiObject, oldWidget?: Widget): boolean {
-		const old = oldWidget as TextWidget;
-		if (oldWidget && old.text !== this.text) {
-			this._cachedSize = undefined;
-		}
+	override updateComponent(context: Element, component: TextLabel, oldWidget?: Widget): boolean {
+		component.Text = this.text;
 		return true;
 	}
 
-	_layout(
-		component: GuiObject,
-		constraints: BoxConstraints,
-		children: FoundationElement[],
-	): Vector2 {
-		if (!this._cachedSize) {
-			this._cachedSize = component.AbsoluteSize;
-		}
-		return this._cachedSize;
+	_size(component: RbxComponent): BoxSize {
+		return component.AbsoluteSize;
 	}
 
 	override createComponent(context: BuildContext): RbxComponent {
@@ -41,7 +30,6 @@ export class TextWidget extends FoundationWidget {
 		text.AutomaticSize = Enum.AutomaticSize.XY;
 		return text;
 	}
-
 }
 
 function getRelativeSize(component: RbxComponent): [number, number] {
@@ -67,12 +55,16 @@ export function expandRbxComponentToConstraints(
 }
 
 export class BaseFrame extends FoundationWidget {
+	_size(frame: RbxComponent): Vector2 {
+		return udim2Vector2(frame.Size);
+	}
+
 	override _layout(
 		frame: RbxComponent,
 		constraints: BoxConstraints,
 		children: Array<FoundationElement>,
-	): BoxSize {
-		return expandRbxComponentToConstraints(frame, constraints);
+	) {
+		expandRbxComponentToConstraints(frame, constraints);
 	}
 
 	override createComponent(context: BuildContext): ScrollingFrame {
@@ -93,7 +85,7 @@ export class Padding extends BaseFrame {
 		frame: RbxComponent,
 		constraints: BoxConstraints,
 		children: FoundationElement[], // TODO: pass children indirectly
-	): BoxSize {
+	): void {
 		let [paddedW, paddedH] = getRelativeSize(frame);
 		const horizontalPadding = this.edgeInsets.start + this.edgeInsets.ending;
 		const verticalPadding = this.edgeInsets.top + this.edgeInsets.bottom;
@@ -113,7 +105,8 @@ export class Padding extends BaseFrame {
 		}
 		frame.Position = new UDim2(0, this.edgeInsets.start, 0, this.edgeInsets.top);
 		const childConstraint = BoxConstraints.fromVector2(new Vector2(paddedW - 2, paddedH - 2));
-		const childSize = children[0].layout(childConstraint);
+		children[0].layout(childConstraint);
+		const childSize = children[0].size();
 		// if (!constraints.checkConstraints(childSize)) {
 		// 	print("Child of Padding doesn't match constraints");
 		// }
@@ -121,7 +114,6 @@ export class Padding extends BaseFrame {
 		const newHeight = childSize.Y + verticalPadding;
 		const clamp = clampToConstraints(new Vector2(newWidth, newHeight), constraints);
 		frame.Size = new UDim2(0, clamp.X, 0, clamp.Y);
-		return new Vector2(newWidth, newHeight);
 	}
 
 	constructor(params: { child: Widget; edgeInsets: EdgeInsets }) {
@@ -138,16 +130,18 @@ export class Row extends BaseFrame {
 		frame: GuiObject,
 		constraints: BoxConstraints,
 		children: FoundationElement[],
-	): BoxSize {
+	): void {
 		debug.profilebegin("PianoRowLayout");
-		const selfSize = super._layout(frame, constraints, children);
+		super._layout(frame, constraints, children);
+		const selfSize = super._size(frame);
 		const totalWidth = selfSize.X;
 		let childWidths = 0;
 		const evenDivide = constraints.clone();
 		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
 		const sizes: Vector2[] = [];
 		for (const child of children) {
-			const size = child.layout(evenDivide);
+			child.layout(evenDivide);
+			const size = child.size();
 			sizes.push(size);
 			childWidths += size.X;
 		}
@@ -159,7 +153,6 @@ export class Row extends BaseFrame {
 			x += spacing;
 		});
 		debug.profileend();
-		return selfSize;
 	}
 
 	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
@@ -169,6 +162,10 @@ export class Row extends BaseFrame {
 }
 
 export class RobloxComponentWidget extends FoundationWidget {
+	_size(component: RbxComponent): Vector2 {
+		return udim2Vector2(component.Size);
+	}
+
 	createElement(): Element {
 		return new FoundationElement(this);
 	}
@@ -177,11 +174,11 @@ export class RobloxComponentWidget extends FoundationWidget {
 		return this.component;
 	}
 
-	_layout(component: GuiObject, constraints: BoxConstraints, _: FoundationElement[]): Vector2 {
+	_layout(component: GuiObject, constraints: BoxConstraints, _: FoundationElement[]) {
 		if (this.layout) {
 			return expandRbxComponentToConstraints(component, constraints);
 		}
-		return constraints.toVector2();
+		// return constraints.toVector2();
 	}
 
 	component: GuiObject;
