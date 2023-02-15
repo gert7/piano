@@ -439,7 +439,8 @@ export class InheritedElement<T> extends ProxyElement {
 			// print("shouldNotify");
 			for (const [element, aspect] of this.dependents) {
 				// print("shouldNotify" + element.widgetName());
-				element.markRebuild();
+				// element.markRebuild();
+				task.defer(() => element.markRebuild());
 			}
 		}
 	}

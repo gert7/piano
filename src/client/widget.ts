@@ -88,6 +88,8 @@ export abstract class ProxyWidget implements Widget {
 	}
 }
 
+/** Note: May have a bug that occasionally causes subscribed Widgets not to mark
+ * for rebuild. Usually occurs once per application run. */
 export abstract class InheritedWidget<T> extends ProxyWidget {
 	createElement(): ProxyElement {
 		return new InheritedElement(this);

@@ -104,3 +104,17 @@ export class EdgeInsets {
 		return new EdgeInsets({ start: inset, end: inset, top: inset, bottom: inset });
 	}
 }
+
+export enum Direction {
+	Horizontal,
+	Vertical,
+}
+
+export function mainAxisValue(vec: Vector2, direction: Direction): number {
+	switch (direction) {
+		case Direction.Horizontal:
+			return vec.X;
+		case Direction.Vertical:
+			return vec.Y;
+	}
+}

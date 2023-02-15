@@ -1,5 +1,13 @@
 import { BuildContext, Element, FoundationElement } from "./element";
-import { BoxConstraints, BoxSize, clampToConstraints, EdgeInsets, udim2Vector2 } from "./geometry";
+import {
+	BoxConstraints,
+	BoxSize,
+	clampToConstraints,
+	Direction,
+	EdgeInsets,
+	mainAxisValue,
+	udim2Vector2,
+} from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget, Widget } from "./widget";
 
@@ -131,9 +139,10 @@ export class Padding extends BaseFrame {
 	}
 }
 
-export class Row extends BaseFrame {
+export class Flex extends BaseFrame {
 	spreadEvenly = false;
 	desiredSpace = 8.0;
+	direction: Direction;
 
 	override _layout(
 		frame: GuiObject,
@@ -143,38 +152,59 @@ export class Row extends BaseFrame {
 		debug.profilebegin("PianoRowLayout");
 		super._layout(frame, constraints, children);
 		const selfSize = super._size(frame);
-		const totalWidth = selfSize.X;
+		const totalLength = mainAxisValue(selfSize, this.direction);
 		const evenDivide = constraints.clone();
-		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
+		switch (this.direction) {
+			case Direction.Horizontal:
+				evenDivide.maxWidth = constraints.maxWidthN() / children.size();
+				break;
+			case Direction.Vertical:
+				evenDivide.maxHeight = constraints.maxHeightN() / children.size();
+				break;
+		}
 		const sizes: Vector2[] = [];
 
-		let childWidths = 0;
-		// print("Row Layout");
+		let childLengths = 0;
 		for (const child of children) {
-			// print(child.widgetName());
 			child.layout(evenDivide);
 			const size = child.size();
-			// print(size);
 			sizes.push(size);
-			childWidths += size.X;
+			childLengths += mainAxisValue(size, this.direction);
 		}
 
-		const spacing = (totalWidth - childWidths) / (children.size() + 1);
-		let x = spacing;
-		// print("forEaching");
+		const spacing = (totalLength - childLengths) / (children.size() + 1);
+		let mainAxisDistance = spacing;
 		children.forEach((child, i) => {
-			// print(child.widgetName());
-			child.setPosition(new UDim2(0, x, 0, child.position().Y));
-			// print(x);
-			x += sizes[i].X;
-			x += spacing;
+			switch (this.direction) {
+				case Direction.Horizontal:
+					child.setPosition(new UDim2(0, mainAxisDistance, 0, child.position().Y));
+					break;
+				case Direction.Vertical:
+					child.setPosition(new UDim2(0, child.position().X, 0, mainAxisDistance));
+					break;
+			}
+			mainAxisDistance += mainAxisValue(sizes[i], this.direction);
+			mainAxisDistance += spacing;
 		});
 		debug.profileend();
 	}
 
-	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
+	constructor(direction: Direction, params: { children: Array<Widget>; spreadEvenly?: boolean }) {
 		super(params.children);
+		this.direction = direction;
 		this.spreadEvenly = params.spreadEvenly ?? this.spreadEvenly;
+	}
+}
+
+export class Row extends Flex {
+	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
+		super(Direction.Horizontal, params);
+	}
+}
+
+export class Column extends Flex {
+	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
+		super(Direction.Vertical, params);
 	}
 }
 
