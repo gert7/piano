@@ -2,6 +2,8 @@ import {
 	BuildContext,
 	Element,
 	FoundationElement,
+	InheritedElement,
+	ProxyElement,
 	StatefulElement,
 	StatelessElement,
 } from "./element";
@@ -10,7 +12,7 @@ import { HookElement } from "./hook";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 
-/** A Widget is a blueprint for creating an {@link Element}. */
+/** A Widget is a blueprint for creating an {@link ProxyElement}. */
 export interface Widget {
 	createElement(): Element;
 }
@@ -19,13 +21,13 @@ export interface Widget {
  * {@link RbxComponent | Roblox Component}. Can have 0 or more children.
  *
  * If the `_children` array becomes `undefined` rather than empty during a
- * rebuild, the children will *not* be updated in the {@link Element} tree. */
+ * rebuild, the children will *not* be updated in the {@link ProxyElement} tree. */
 export abstract class FoundationWidget implements Widget {
-	_layout(
+	abstract _layout(
 		component: RbxComponent,
 		constraints: BoxConstraints,
 		children: Array<FoundationElement>,
-	): void { }
+	): void;
 
 	abstract _size(component: RbxComponent): BoxSize;
 
@@ -72,4 +74,26 @@ export abstract class HookWidget implements Widget {
 	}
 
 	abstract build(context: BuildContext): Widget;
+}
+
+export abstract class ProxyWidget implements Widget {
+	createElement(): Element {
+		return new ProxyElement(this);
+	}
+
+	child: Widget;
+
+	constructor(child: Widget) {
+		this.child = child;
+	}
+}
+
+export abstract class InheritedWidget<T> extends ProxyWidget {
+	createElement(): ProxyElement {
+		return new InheritedElement(this);
+	}
+
+	abstract updateShouldNotify(oldWidget: InheritedWidget<T>): boolean;
+
+	abstract _value(): T;
 }

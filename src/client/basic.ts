@@ -4,6 +4,11 @@ import { RbxComponent } from "./types";
 import { FoundationWidget, Widget } from "./widget";
 
 export class TextWidget extends FoundationWidget {
+	_layout(
+		component: GuiObject,
+		constraints: BoxConstraints,
+		children: FoundationElement[],
+	): void { }
 	text: string;
 
 	constructor(text: string) {
@@ -11,7 +16,11 @@ export class TextWidget extends FoundationWidget {
 		this.text = text;
 	}
 
-	override updateComponent(context: Element, component: TextLabel, oldWidget?: Widget): boolean {
+	override updateComponent(
+		context: BuildContext,
+		component: TextLabel,
+		oldWidget?: Widget,
+	): boolean {
 		component.Text = this.text;
 		return true;
 	}
@@ -103,9 +112,9 @@ export class Padding extends BaseFrame {
 				paddedH = 0;
 			}
 		}
-		frame.Position = new UDim2(0, this.edgeInsets.start, 0, this.edgeInsets.top);
 		const childConstraint = BoxConstraints.fromVector2(new Vector2(paddedW - 2, paddedH - 2));
 		children[0].layout(childConstraint);
+		children[0].setPosition(new UDim2(0, this.edgeInsets.start, 0, this.edgeInsets.top));
 		const childSize = children[0].size();
 		// if (!constraints.checkConstraints(childSize)) {
 		// 	print("Child of Padding doesn't match constraints");
@@ -135,20 +144,28 @@ export class Row extends BaseFrame {
 		super._layout(frame, constraints, children);
 		const selfSize = super._size(frame);
 		const totalWidth = selfSize.X;
-		let childWidths = 0;
 		const evenDivide = constraints.clone();
 		evenDivide.maxWidth = constraints.maxWidthN() / children.size();
 		const sizes: Vector2[] = [];
+
+		let childWidths = 0;
+		print("Row Layout");
 		for (const child of children) {
+			print(child.widgetName());
 			child.layout(evenDivide);
 			const size = child.size();
+			print(size);
 			sizes.push(size);
 			childWidths += size.X;
 		}
+
 		const spacing = (totalWidth - childWidths) / (children.size() + 1);
 		let x = spacing;
+		print("forEaching");
 		children.forEach((child, i) => {
+			print(child.widgetName());
 			child.setPosition(new UDim2(0, x, 0, child.position().Y));
+			print(x);
 			x += sizes[i].X;
 			x += spacing;
 		});

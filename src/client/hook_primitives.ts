@@ -1,4 +1,4 @@
-import { Element } from "./element";
+import { ProxyElement } from "./element";
 import { Error } from "./error";
 import { Hook, HookElement, HookState, use } from "./hook";
 
@@ -202,7 +202,7 @@ class _StateHookState<R> implements HookState<UseStateReturn<R>, _StateHook<R>> 
 		this._element.markRebuild();
 	};
 
-	build(context: Element): UseStateReturn<R> {
+	build(context: ProxyElement): UseStateReturn<R> {
 		return [this.value, this.setter];
 	}
 

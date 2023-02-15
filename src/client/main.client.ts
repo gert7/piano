@@ -1,7 +1,7 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
-import { HookWidget, Widget } from "./widget";
-import { BuildContext, Element, RootElement } from "./element";
+import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "./widget";
+import { BuildContext, Element, ProxyElement, RootElement, StatelessElement } from "./element";
 import { RobloxTextButton } from "./button";
 import { useRef, useState } from "./hook_primitives";
 
@@ -27,6 +27,7 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	const homeElement = home.createElement();
 	rootElement.appendToRoot(homeElement);
 	homeElement.update(home);
+	rootElement.debugPrint();
 	const absSize = rootFrame.AbsoluteSize;
 
 	const constraints = new BoxConstraints(0.0, absSize.X, 0.0, absSize.Y);
@@ -36,17 +37,16 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 	rootFrame
 		.GetPropertyChangedSignal("AbsoluteSize")
 		.Connect(() => foundationRoot.layout(BoxConstraints.fromVector2(rootFrame.AbsoluteSize)));
-	rootElement.debugPrint();
 }
 
 class OneChild extends HookWidget {
-	build(context: Element): Widget {
+	build(context: ProxyElement): Widget {
 		return new TextWidget("What is going on");
 	}
 }
 
 class TwoChild extends HookWidget {
-	build(context: Element): Widget {
+	build(context: ProxyElement): Widget {
 		return new Padding({ edgeInsets: EdgeInsets.all(8.0), child: new OneChild() });
 	}
 }
@@ -95,7 +95,7 @@ class CounterWidget extends HookWidget {
 }
 
 class TreeYoyoWidget extends HookWidget {
-	build(context: Element): Widget {
+	build(context: ProxyElement): Widget {
 		const [state, setState] = useState(() => 0);
 
 		function flip() {
@@ -111,11 +111,62 @@ class TreeYoyoWidget extends HookWidget {
 	}
 }
 
-class HomeWidget extends HookWidget {
-	override build(): Widget {
+class Topic {
+	name: string;
+
+	constructor(name: string) {
+		this.name = name;
+	}
+}
+
+class TopicWidget extends InheritedWidget<Topic> {
+	updateShouldNotify(oldWidget: InheritedWidget<Topic>): boolean {
+		return true;
+	}
+
+	_topic: Topic;
+
+	_value(): Topic {
+		return this._topic;
+	}
+
+	constructor(params: { topic: Topic; child: Widget }) {
+		super(params.child);
+		this._topic = params.topic;
+	}
+}
+
+class MyConsumerWidget extends StatelessWidget {
+	build(context: Element): Widget {
+		const topicValue = context.watch(TopicWidget);
+
 		return new Padding({
 			edgeInsets: EdgeInsets.all(8.0),
-			child: new CounterWidget(),
+			// child: new TextWidget(topicValue.name),
+			child: new TextWidget("Hello World"),
+		});
+	}
+}
+
+class HomeWidget extends HookWidget {
+	override build(context: BuildContext): Widget {
+		const [count, setCount] = useState(() => 1);
+		print(count);
+
+		return new Padding({
+			edgeInsets: EdgeInsets.all(8.0),
+			// child: new TextWidget("Bonjoru"),
+			child: new TopicWidget({
+				topic: new Topic("Hello World " + count),
+				child: new Row({
+					children: [
+						new RobloxTextButton("Update InheritedWidget: " + count, () =>
+							setCount(count + 1),
+						),
+						new MyConsumerWidget(),
+					],
+				}),
+			}),
 		});
 	}
 }

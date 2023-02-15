@@ -1,12 +1,16 @@
 import { expandRbxComponentToConstraints } from "./basic";
 import { FoundationElement } from "./element";
-import { BoxConstraints } from "./geometry";
+import { BoxConstraints, udim2Vector2 } from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget } from "./widget";
 
 export class RobloxTextButton extends FoundationWidget {
 	text: string;
 	onClick: () => void;
+
+	override _size(component: GuiObject): Vector2 {
+		return udim2Vector2(component.Size);
+	}
 
 	override updateComponent(context: FoundationElement, component: GuiObject): boolean {
 		const button = component as TextButton;

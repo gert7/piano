@@ -1,4 +1,4 @@
-import { BuildContext, Element, StatefulElement } from "./element";
+import { BuildContext, ProxyElement, StatefulElement } from "./element";
 import { Error } from "./error";
 import { StatefulWidget, Widget } from "./widget";
 

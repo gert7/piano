@@ -1,7 +1,15 @@
+import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
 import { State } from "./state";
 import { RbxComponent } from "./types";
-import { FoundationWidget, StatefulWidget, StatelessWidget, Widget } from "./widget";
+import {
+	FoundationWidget,
+	InheritedWidget,
+	ProxyWidget,
+	StatefulWidget,
+	StatelessWidget,
+	Widget,
+} from "./widget";
 
 export abstract class Element {
 	widget?: Widget;
@@ -51,7 +59,8 @@ export abstract class Element {
 	 * otherwise traverses down the tree.
 	 */
 	findChildWithComponent(): FoundationElement {
-		// print("No component here at " + this.widget?.typeName);
+		const child = this._children[0];
+		if (!child) throw new Error(`No child component at ${this.widgetName()}`);
 		return this._children[0].findChildWithComponent();
 	}
 
@@ -82,13 +91,17 @@ export abstract class Element {
 		element.mount(this);
 		element.update(widget);
 		index !== undefined ? (this._children[index] = element) : this._children.push(element);
-		// print(`Inflated ${getmetatable(widget)}`);
+		print(`Inflated ${getmetatable(widget)}`);
 		return element;
 	}
 
+	/** Updates the Widget at this Element, moves the old widget to _oldWidget,
+	 * and rebuilds itself.
+	 */
 	update(widget: Widget) {
 		this._oldWidget = this.widget;
 		this.widget = widget;
+		this.rebuild();
 		return;
 	}
 
@@ -115,7 +128,7 @@ export abstract class Element {
 		if (this._children[index] && this._children[index].widget) {
 			if (widget) {
 				if (getmetatable(this._children[index].widget!) === getmetatable(widget)) {
-					// print(`Found same type widget for recycling: ${getmetatable(widget)}`);
+					print(`Found same type widget for recycling: ${getmetatable(widget)}`);
 					this._children[index].update(widget);
 				} else {
 					print(
@@ -155,6 +168,33 @@ export abstract class Element {
 
 	mounted() {
 		return this._mounted;
+	}
+
+	_findInheritedWidgetElement<T>(
+		cons: new (...args: any[]) => InheritedWidget<T>,
+		aspect?: object,
+	): InheritedElement<T> {
+		let current = this._parent;
+		for (; ;) {
+			if (!current) {
+				throw new Error(`InheritedWidget ${cons} not found in ancestors`);
+			} else if (current instanceof InheritedElement && current.widget instanceof cons) {
+				return current as InheritedElement<T>;
+			} else {
+				current = current?._parent;
+			}
+		}
+	}
+
+	watch<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
+		const element = this._findInheritedWidgetElement(cons, aspect);
+		element.updateDependents(this, aspect);
+		return element.widget._value();
+	}
+
+	read<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
+		const element = this._findInheritedWidgetElement(cons, aspect);
+		return element.widget._value();
 	}
 
 	constructor(widget?: Widget) {
@@ -302,13 +342,14 @@ export class FoundationElement extends Element {
 	}
 }
 
+
 export class StatelessElement extends Element {
 	widget: StatelessWidget;
 
-	override update(widget: StatelessWidget): void {
-		super.update(widget);
-		this.rebuild();
-	}
+	// override update(widget: StatelessWidget): void {
+	// 	super.update(widget);
+	// 	this.rebuild();
+	// }
 
 	override rebuild() {
 		if (!this._dirty) return;
@@ -337,16 +378,17 @@ export class StatefulElement extends Element {
 	}
 
 	override update(widget: StatefulWidget) {
+		super.update(widget);
 		this.state.widget = widget;
 		if (this._oldWidget) {
 			this.state.didUpdateWidget(this._oldWidget as StatefulWidget);
 		}
 		this.rebuild();
-		super.update(widget);
 	}
 
 	override rebuild() {
 		if (!this._dirty) return;
+		// print("StatefulElement rebuild()");
 		const child = this.state.build(this);
 		this.updateChild(0, undefined, child, undefined);
 		super.rebuild();
@@ -354,6 +396,57 @@ export class StatefulElement extends Element {
 
 	override unmount(): void {
 		this.state.dispose();
+	}
+}
+
+export class ProxyElement extends Element {
+	widget: ProxyWidget;
+
+	override update(widget: ProxyWidget): void {
+		super.update(widget);
+		this.updateChild(0, undefined, widget.child, undefined);
+		this._children[0].update(widget.child);
+		this._children[0].markRebuild();
+	}
+
+	override rebuild(): void {
+		if (!this._dirty) return;
+		const child = this.widget.child;
+		this.updateChild(0, undefined, child, undefined);
+		super.rebuild();
+	}
+
+	constructor(widget: ProxyWidget) {
+		super();
+		this.widget = widget;
+	}
+}
+
+export class InheritedElement<T> extends ProxyElement {
+	widget: InheritedWidget<T>;
+
+	private dependents: Map<Element, object | boolean> = new Map();
+
+	updateDependents(element: Element, aspect?: object) {
+		print("Adding to dependents: " + element.widgetName());
+		this.dependents.set(element, aspect ?? false);
+	}
+
+	override update(widget: InheritedWidget<T>): void {
+		super.update(widget);
+		const shouldNotify = this.widget.updateShouldNotify(this._oldWidget as InheritedWidget<T>);
+		if (shouldNotify) {
+			print("shouldNotify");
+			for (const [element, aspect] of this.dependents) {
+				print("shouldNotify" + element.widgetName());
+				element.markRebuild();
+			}
+		}
+	}
+
+	constructor(widget: InheritedWidget<T>) {
+		super(widget);
+		this.widget = widget;
 	}
 }
 
