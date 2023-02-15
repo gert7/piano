@@ -149,23 +149,23 @@ export class Row extends BaseFrame {
 		const sizes: Vector2[] = [];
 
 		let childWidths = 0;
-		print("Row Layout");
+		// print("Row Layout");
 		for (const child of children) {
-			print(child.widgetName());
+			// print(child.widgetName());
 			child.layout(evenDivide);
 			const size = child.size();
-			print(size);
+			// print(size);
 			sizes.push(size);
 			childWidths += size.X;
 		}
 
 		const spacing = (totalWidth - childWidths) / (children.size() + 1);
 		let x = spacing;
-		print("forEaching");
+		// print("forEaching");
 		children.forEach((child, i) => {
-			print(child.widgetName());
+			// print(child.widgetName());
 			child.setPosition(new UDim2(0, x, 0, child.position().Y));
-			print(x);
+			// print(x);
 			x += sizes[i].X;
 			x += spacing;
 		});

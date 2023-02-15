@@ -95,5 +95,5 @@ export abstract class InheritedWidget<T> extends ProxyWidget {
 
 	abstract updateShouldNotify(oldWidget: InheritedWidget<T>): boolean;
 
-	abstract _value(): T;
+	abstract value(): T;
 }

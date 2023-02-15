@@ -65,7 +65,7 @@ export abstract class Element {
 	}
 
 	connectComponentToParent(component: RbxComponent): Element | undefined {
-		print("cCTP");
+		// print("cCTP");
 		return this._parent?.connectComponentToParent(component);
 	}
 
@@ -91,7 +91,7 @@ export abstract class Element {
 		element.mount(this);
 		element.update(widget);
 		index !== undefined ? (this._children[index] = element) : this._children.push(element);
-		print(`Inflated ${getmetatable(widget)}`);
+		// print(`Inflated ${getmetatable(widget)}`);
 		return element;
 	}
 
@@ -128,14 +128,14 @@ export abstract class Element {
 		if (this._children[index] && this._children[index].widget) {
 			if (widget) {
 				if (getmetatable(this._children[index].widget!) === getmetatable(widget)) {
-					print(`Found same type widget for recycling: ${getmetatable(widget)}`);
+					// print(`Found same type widget for recycling: ${getmetatable(widget)}`);
 					this._children[index].update(widget);
 				} else {
-					print(
-						`${this._children[index].widgetName()} will be replaced with ${getmetatable(
-							widget,
-						)}`,
-					);
+					// print(
+					// 	`${this._children[index].widgetName()} will be replaced with ${getmetatable(
+					// 		widget,
+					// 	)}`,
+					// );
 					this._children[index].unmount();
 					this.inflateWidget(widget, index);
 				}
@@ -189,12 +189,12 @@ export abstract class Element {
 	watch<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
 		const element = this._findInheritedWidgetElement(cons, aspect);
 		element.updateDependents(this, aspect);
-		return element.widget._value();
+		return element.widget.value();
 	}
 
 	read<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
 		const element = this._findInheritedWidgetElement(cons, aspect);
-		return element.widget._value();
+		return element.widget.value();
 	}
 
 	constructor(widget?: Widget) {
@@ -428,7 +428,7 @@ export class InheritedElement<T> extends ProxyElement {
 	private dependents: Map<Element, object | boolean> = new Map();
 
 	updateDependents(element: Element, aspect?: object) {
-		print("Adding to dependents: " + element.widgetName());
+		// print("Adding to dependents: " + element.widgetName());
 		this.dependents.set(element, aspect ?? false);
 	}
 
@@ -436,9 +436,9 @@ export class InheritedElement<T> extends ProxyElement {
 		super.update(widget);
 		const shouldNotify = this.widget.updateShouldNotify(this._oldWidget as InheritedWidget<T>);
 		if (shouldNotify) {
-			print("shouldNotify");
+			// print("shouldNotify");
 			for (const [element, aspect] of this.dependents) {
-				print("shouldNotify" + element.widgetName());
+				// print("shouldNotify" + element.widgetName());
 				element.markRebuild();
 			}
 		}
@@ -451,7 +451,8 @@ export class InheritedElement<T> extends ProxyElement {
 }
 
 export class RootElement extends Element {
-	eventHandler?: (_: string) => void;
+	// TODO: Use
+	eventHandler?: (event: string) => void;
 	elementsToRebuild: Set<Element> = new Set();
 	timePassed = 0.0;
 	interval = 0.016;
@@ -476,9 +477,7 @@ export class RootElement extends Element {
 		this.elementsToRebuild.delete(element);
 	}
 
-	manageTree(deltaTime: number, force = false) {
-		// if (this.timePassed > this.interval || force) {
-		// this.timePassed = 0.0;
+	manageTreeLoop(deltaTime?: number) {
 		for (const element of this.elementsToRebuild) {
 			if (element && element.isDirty()) {
 				element.rebuild();
@@ -492,16 +491,13 @@ export class RootElement extends Element {
 			}
 		}
 		this.elementsToRebuild.clear();
-		wait();
-		// } else {
-		// 	this.timePassed += deltaTime;
-		// }
+		wait(deltaTime);
 	}
 
 	constructor(eventHandler: (event: string) => void) {
 		super();
 		this.eventHandler = eventHandler;
 		const runService = game.GetService("RunService");
-		runService.PreRender.Connect((d) => this.manageTree(d));
+		runService.PreRender.Connect((d) => this.manageTreeLoop(d));
 	}
 }

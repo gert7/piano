@@ -124,15 +124,15 @@ class TopicWidget extends InheritedWidget<Topic> {
 		return true;
 	}
 
-	_topic: Topic;
+	private topic: Topic;
 
-	_value(): Topic {
-		return this._topic;
+	value(): Topic {
+		return this.topic;
 	}
 
 	constructor(params: { topic: Topic; child: Widget }) {
 		super(params.child);
-		this._topic = params.topic;
+		this.topic = params.topic;
 	}
 }
 
@@ -142,8 +142,8 @@ class MyConsumerWidget extends StatelessWidget {
 
 		return new Padding({
 			edgeInsets: EdgeInsets.all(8.0),
-			// child: new TextWidget(topicValue.name),
-			child: new TextWidget("Hello World"),
+			child: new TextWidget(topicValue.name),
+			// child: new TextWidget("Hello World"),
 		});
 	}
 }
@@ -154,7 +154,7 @@ class HomeWidget extends HookWidget {
 		print(count);
 
 		return new Padding({
-			edgeInsets: EdgeInsets.all(8.0),
+			edgeInsets: EdgeInsets.all(64.0),
 			// child: new TextWidget("Bonjoru"),
 			child: new TopicWidget({
 				topic: new Topic("Hello World " + count),
