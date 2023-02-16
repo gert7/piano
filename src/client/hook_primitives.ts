@@ -1,5 +1,4 @@
-import { ProxyElement } from "./element";
-import { Error } from "./error";
+import { BuildContext } from "./element";
 import { Hook, HookElement, HookState, use } from "./hook";
 
 export class ObjectRef<T> {
@@ -95,7 +94,7 @@ class _ValueChangedHookState<T, R> implements HookState<R, _ValueChangedHook<T, 
 }
 
 /**
- * A {@link Hook} that fires a callback whenever the value provided changes between
+ * A {@link hook.Hook | Hook} that fires a callback whenever the value provided changes between
  * rebuilds, and returns the result of that callback.
  *
  * @param value The value to check against
@@ -202,15 +201,17 @@ class _StateHookState<R> implements HookState<UseStateReturn<R>, _StateHook<R>> 
 		this._element.markRebuild();
 	};
 
-	build(context: ProxyElement): UseStateReturn<R> {
+	build(context: BuildContext): UseStateReturn<R> {
 		return [this.value, this.setter];
 	}
 
 	dispose(): void { }
 }
 
-/** Hook for persisting values across rebuilds. Returns the value and a
- * function for changing the value, which will trigger a rebuild.
+/**
+ * A {@link hook.Hook | Hook} for persisting values across rebuilds. Returns
+ * the value and a function for changing the value, which will trigger a
+ * rebuild.
  *
  * @param initialValue A function that returns the initial value.
  */

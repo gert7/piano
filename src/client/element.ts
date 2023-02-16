@@ -1,3 +1,12 @@
+/**
+ * An element is the persistent, *real* state of a {@link Widget} that exists
+ * for as long as a Widget of the same type occupies the same exact position in
+ * the Element tree between rebuilds.
+ *
+ * If a Widget of a different type is in the same position, the old Element will
+ * be unmounted, disposed, and replaced with a new one.
+ * @module
+ */
 import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
 import { State } from "./state";
@@ -170,7 +179,7 @@ export abstract class Element {
 		return this._mounted;
 	}
 
-	_findInheritedWidgetElement<T>(
+	private _findInheritedWidgetElement<T>(
 		cons: new (...args: any[]) => InheritedWidget<T>,
 		aspect?: object,
 	): InheritedElement<T> {
@@ -211,10 +220,12 @@ export class FoundationElement extends Element {
 	connections: Map<string, RBXScriptConnection> = new Map();
 	componentParentElement?: Element;
 
+	/** The Position of the Roblox component. */
 	position(): Vector2 {
 		return new Vector2(this.component.Position.X.Offset, this.component.Position.Y.Offset);
 	}
 
+	/** Sets the Position of the Roblox component. */
 	setPosition(position: UDim2) {
 		this.component.Position = position;
 	}
@@ -285,9 +296,9 @@ export class FoundationElement extends Element {
 		super.rebuild();
 	}
 
-	/** Traverse up the Element tree and attach the RbxComponent
-	 * to the closest RbxComponent in the tree.
-	 */
+	// /** Traverse up the Element tree and attach the RbxComponent
+	//  * to the closest RbxComponent in the tree.
+	//  */
 	// attachComponentToParent() {
 	// 	if (!this._parent) return;
 	// 	let element = this._parent;
@@ -341,7 +352,6 @@ export class FoundationElement extends Element {
 		this.component = widget.createComponent(this);
 	}
 }
-
 
 export class StatelessElement extends Element {
 	widget: StatelessWidget;
@@ -425,7 +435,7 @@ export class ProxyElement extends Element {
 export class InheritedElement<T> extends ProxyElement {
 	widget: InheritedWidget<T>;
 
-	private dependents: Map<Element, object | boolean> = new Map();
+	private dependents: Map<Element, object | false> = new Map();
 
 	updateDependents(element: Element, aspect?: object) {
 		// print("Adding to dependents: " + element.widgetName());

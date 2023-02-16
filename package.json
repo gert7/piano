@@ -1,12 +1,12 @@
 {
-  "name": "roblox-flutter",
+  "name": "piano",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Flutter for Roblox",
+  "main": "src/client/index.ts",
   "scripts": {
     "build": "rbxtsc",
     "watch": "rbxtsc -w --usePolling",
-    "docs": "typedoc src/client/*"
+    "docs": "typedoc src/client/index.ts"
   },
   "keywords": [],
   "author": "",

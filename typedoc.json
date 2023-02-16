@@ -1,0 +1,8 @@
+{
+	"entryPoints": ["./src/client/"],
+	"entryPointStrategy": "expand",
+	"out": "docs",
+	"readme": "README.md",
+	"name": "Piano",
+	"tsconfig": "./tsconfig.json"
+  }

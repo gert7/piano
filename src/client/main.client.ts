@@ -1,7 +1,7 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
 import { Padding, Row, TextWidget } from "./basic";
 import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "./widget";
-import { BuildContext, Element, ProxyElement, RootElement, StatelessElement } from "./element";
+import { BuildContext, Element, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
 import { useRef, useState } from "./hook_primitives";
 
@@ -40,13 +40,13 @@ export function mount(rootNode: GuiBase2d, home: Widget) {
 }
 
 class OneChild extends HookWidget {
-	build(context: ProxyElement): Widget {
+	build(context: Element): Widget {
 		return new TextWidget("What is going on");
 	}
 }
 
 class TwoChild extends HookWidget {
-	build(context: ProxyElement): Widget {
+	build(context: Element): Widget {
 		return new Padding({ edgeInsets: EdgeInsets.all(8.0), child: new OneChild() });
 	}
 }
@@ -95,7 +95,7 @@ class CounterWidget extends HookWidget {
 }
 
 class TreeYoyoWidget extends HookWidget {
-	build(context: ProxyElement): Widget {
+	build(context: Element): Widget {
 		const [state, setState] = useState(() => 0);
 
 		function flip() {

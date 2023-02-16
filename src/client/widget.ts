@@ -1,3 +1,7 @@
+/**
+ * Widgets are blueprints for creating Elements.
+ * @module
+ */
 import {
 	BuildContext,
 	Element,
@@ -7,21 +11,21 @@ import {
 	StatefulElement,
 	StatelessElement,
 } from "./element";
-import { BoxConstraints, BoxSize, udim2Vector2 } from "./geometry";
+import { BoxConstraints, BoxSize } from "./geometry";
 import { HookElement } from "./hook";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 
-/** A Widget is a blueprint for creating an {@link ProxyElement}. */
+/** A Widget is a blueprint for creating an {@link Element}. */
 export interface Widget {
 	createElement(): Element;
 }
 
-/** A {@link Widget} that corresponds to a
- * {@link RbxComponent | Roblox Component}. Can have 0 or more children.
+/** A {@link Widget} that corresponds to {@link RbxComponent}. Can have 0 or
+ * more children.
  *
  * If the `_children` array becomes `undefined` rather than empty during a
- * rebuild, the children will *not* be updated in the {@link ProxyElement} tree. */
+ * rebuild, the children will *not* be updated in the {@link Element} tree. */
 export abstract class FoundationWidget implements Widget {
 	abstract _layout(
 		component: RbxComponent,
@@ -60,11 +64,47 @@ export abstract class StatelessWidget implements Widget {
 	abstract build(context: BuildContext): Widget;
 }
 
+/** A {@link Widget} that will persist a {@link State} in its {@link Element}
+ * for as long as a widget of the same type remains in the same position in the
+ * tree. Consider using {@link HookWidget} instead.
+ *
+ * ```typescript
+ * export class CounterWidget extends StatefulWidget {
+ * 		initialValue: number;
+ *
+ * 		createState = () => new _CounterWidgetState();
+ *
+ * 		constructor(initValue: number) {
+ * 			super();
+ * 			this.initialValue = initValue;
+ * 		}
+ * }
+ *
+ * export class _CounterWidgetState extends State<CounterWidget> {
+ * 		counter!: number;
+ *
+ * 		override initState() {
+ *  		this.counter = this.widget.initialValue;
+ * 		}
+ *
+ * 		increment() {
+ * 			this.setState(() => {
+ * 				this.counter += 1;
+ * 			});
+ * 		}
+ *
+ * 		override build() {
+ * 			return new RobloxTextButton(`The number is: ${this.counter}`, this.increment);
+ * 		}
+ * }
+ * ```
+ * */
 export abstract class StatefulWidget implements Widget {
 	createElement(): Element {
 		return new StatefulElement(this);
 	}
 
+	/** @returns An instance of {@link State} that corresponds to this StatefulWidget. */
 	abstract createState: () => State<StatefulWidget>;
 }
 
