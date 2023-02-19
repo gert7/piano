@@ -1,0 +1,73 @@
+/** The base for listenables that return a single value and are expected to
+ * maintain an array of Element listeners that it can mark for rebuild. It may
+ * also accept a custom `aspect` object for whatever purpose, such as for when a
+ * listener wants to specify only a subset of changes to listen to.
+ *
+ * You should prefer using something like {@link InheritedWidget} instead of
+ * implementing this interface directly.
+ *
+ * @typeParam V The value that the Element returns
+ * @typeParam A An optional aspect type for subscribing only to select changes
+ */
+export interface Provider<V, A = any> {
+	/** Adds an element to a list of subscribers that the Element maintains. */
+	updateDependent(element: Element, aspect?: A): void;
+
+	/** Removes an element from the list of subscribers. This should be called
+	 * from an unmounting or disposing method.
+	 */
+	removeDependent(element: Element): void;
+
+	/** An immediate value that the Element can provide. */
+	value(aspect?: A): V;
+
+	/** The previous value, if applicable. */
+	oldValue(aspect?: A): V | undefined;
+}
+
+export type Selector<T> = (newValue: T, oldValue?: T) => boolean;
+
+export class InheritedElement<T, A = void> extends ProxyElement implements Provider<T, A> {
+	widget: InheritedWidget<T, A>;
+
+	private dependents: Map<Element, A | false> = new Map();
+
+	updateDependent(element: Element, aspect?: A) {
+		// print("Adding to dependents: " + element.widgetName());
+		this.dependents.set(element, aspect ?? false);
+	}
+
+	removeDependent(element: Element) {
+		this.dependents.delete(element);
+	}
+
+	value(aspect?: A): T {
+		return this.widget.value();
+	}
+
+	oldValue(): T | undefined {
+		if (this._oldWidget === undefined) return;
+		const oldWidget = this._oldWidget as InheritedWidget<T, A>;
+		return oldWidget.value();
+	}
+
+	override update(widget: InheritedWidget<T, A>): void {
+		super.update(widget);
+		const shouldNotify = this.widget.updateShouldNotify(
+			this._oldWidget as InheritedWidget<T, A>,
+		);
+		if (shouldNotify) {
+			// print("shouldNotify");
+			for (const [element, aspect] of this.dependents) {
+				// print("shouldNotify" + element.widgetName());
+				// task.defer(() => element.markRebuild());
+				task.defer(() => element.announceDependencyChange(this));
+			}
+		}
+	}
+
+	constructor(widget: InheritedWidget<T, A>) {
+		super(widget);
+		this.widget = widget;
+	}
+}

@@ -6,13 +6,14 @@ import {
 	BuildContext,
 	Element,
 	FoundationElement,
+	InheritedElement,
 	ProxyElement,
 	StatefulElement,
 	StatelessElement,
 } from "./element";
 import { BoxConstraints, BoxSize } from "./geometry";
 import { HookElement } from "./hook";
-import { InheritedElement } from "./provider";
+// import { InheritedElement } from "../removed/provider.ts.none";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 

@@ -6,7 +6,6 @@ import { RobloxTextButton } from "./button";
 import { useRef, useState } from "./hook_primitives";
 
 const Players = game.GetService("Players");
-// hi 
 
 const PlayerGui = Players.LocalPlayer.WaitForChild("PlayerGui") as PlayerGui;
 
@@ -156,18 +155,7 @@ class HomeWidget extends HookWidget {
 
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),
-			// child: new TextWidget("Bonjoru"),
-			child: new TopicWidget({
-				topic: new Topic("Hello World " + count),
-				child: new Row({
-					children: [
-						new RobloxTextButton("Update InheritedWidget: " + count, () =>
-							setCount(count + 1),
-						),
-						new MyConsumerWidget(),
-					],
-				}),
-			}),
+			child: new TextWidget("Bonjoru"),
 		});
 	}
 }

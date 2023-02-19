@@ -9,20 +9,19 @@
  */
 import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
-import { InheritedElement, Provider, Selector } from "./provider";
+import { Provider } from "./provider";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 import {
 	FoundationWidget,
 	InheritedWidget,
+	// InheritedWidget,
 	ProxyWidget,
 	StatefulWidget,
 	StatelessWidget,
 	Widget,
 } from "./widget";
 import { HookWidget } from "./widget";
-
-type ProviderConstructor<T, A> = new (...args: any[]) => Provider<T, A>;
 
 /** The basis for finding a Provider to subscribe to, either by giving the
  * Provider itself, or a typename that will be searched for by traversing the
@@ -155,9 +154,9 @@ export abstract class Element {
 			child.unmount();
 		}
 
-		for (const [provider, _selector] of this.providers) {
-			provider.removeDependent(this);
-		}
+		// for (const [provider, _selector] of this.providers) {
+		// 	provider.removeDependent(this);
+		// }
 	}
 
 	updateChild(
@@ -567,5 +566,52 @@ export class RootElement extends Element {
 		this.eventHandler = eventHandler;
 		const runService = game.GetService("RunService");
 		runService.PreRender.Connect((d) => this.manageTreeLoop(d));
+	}
+}
+
+export type Selector<T> = (newValue: T, oldValue?: T) => boolean;
+
+export class InheritedElement<T, A = void> extends ProxyElement implements Provider<T, A> {
+	widget: InheritedWidget<T, A>;
+
+	private dependents: Map<Element, A | false> = new Map();
+
+	updateDependent(element: Element, aspect?: A) {
+		// print("Adding to dependents: " + element.widgetName());
+		this.dependents.set(element, aspect ?? false);
+	}
+
+	removeDependent(element: Element) {
+		this.dependents.delete(element);
+	}
+
+	value(aspect?: A): T {
+		return this.widget.value();
+	}
+
+	oldValue(): T | undefined {
+		if (this._oldWidget === undefined) return;
+		const oldWidget = this._oldWidget as InheritedWidget<T, A>;
+		return oldWidget.value();
+	}
+
+	override update(widget: InheritedWidget<T, A>): void {
+		super.update(widget);
+		const shouldNotify = this.widget.updateShouldNotify(
+			this._oldWidget as InheritedWidget<T, A>,
+		);
+		if (shouldNotify) {
+			// print("shouldNotify");
+			for (const [element, aspect] of this.dependents) {
+				// print("shouldNotify" + element.widgetName());
+				// task.defer(() => element.markRebuild());
+				task.defer(() => element.announceDependencyChange(this));
+			}
+		}
+	}
+
+	constructor(widget: InheritedWidget<T, A>) {
+		super(widget);
+		this.widget = widget;
 	}
 }

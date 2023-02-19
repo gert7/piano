@@ -1,5 +1,4 @@
-import { Element, ProxyElement } from "./element";
-import { InheritedWidget } from "./widget";
+import { Element } from "./element";
 
 /** The base for listenables that return a single value and are expected to
  * maintain an array of Element listeners that it can mark for rebuild. It may
@@ -26,51 +25,4 @@ export interface Provider<V, A = any> {
 
 	/** The previous value, if applicable. */
 	oldValue(aspect?: A): V | undefined;
-}
-
-export type Selector<T> = (newValue: T, oldValue?: T) => boolean;
-
-export class InheritedElement<T, A = void> extends ProxyElement implements Provider<T, A> {
-	widget: InheritedWidget<T, A>;
-
-	private dependents: Map<Element, A | false> = new Map();
-
-	updateDependent(element: Element, aspect?: A) {
-		// print("Adding to dependents: " + element.widgetName());
-		this.dependents.set(element, aspect ?? false);
-	}
-
-	removeDependent(element: Element) {
-		this.dependents.delete(element);
-	}
-
-	value(aspect?: A): T {
-		return this.widget.value();
-	}
-
-	oldValue(): T | undefined {
-		if (this._oldWidget === undefined) return;
-		const oldWidget = this._oldWidget as InheritedWidget<T, A>;
-		return oldWidget.value();
-	}
-
-	override update(widget: InheritedWidget<T, A>): void {
-		super.update(widget);
-		const shouldNotify = this.widget.updateShouldNotify(
-			this._oldWidget as InheritedWidget<T, A>,
-		);
-		if (shouldNotify) {
-			// print("shouldNotify");
-			for (const [element, aspect] of this.dependents) {
-				// print("shouldNotify" + element.widgetName());
-				// task.defer(() => element.markRebuild());
-				task.defer(() => element.announceDependencyChange(this));
-			}
-		}
-	}
-
-	constructor(widget: InheritedWidget<T, A>) {
-		super(widget);
-		this.widget = widget;
-	}
 }
