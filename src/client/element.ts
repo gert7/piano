@@ -9,6 +9,7 @@
  */
 import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
+import { InheritedElement, Provider, Selector } from "./provider";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 import {
@@ -19,7 +20,19 @@ import {
 	StatelessWidget,
 	Widget,
 } from "./widget";
+import { HookWidget } from "./widget";
 
+type ProviderConstructor<T, A> = new (...args: any[]) => Provider<T, A>;
+
+/** The basis for finding a Provider to subscribe to, either by giving the
+ * Provider itself, or a typename that will be searched for by traversing the
+ * Element tree upwards.
+ */
+export type ProviderName<T, A> = Provider<T, A> | (new (...args: any[]) => InheritedWidget<T, A>);
+
+/** An element is the persistent, real state of a {@link Widget}. It forms
+ * part of the Element tree, and has a lifecycle.
+ */
 export abstract class Element {
 	widget?: Widget;
 	slot?: object;
@@ -29,6 +42,7 @@ export abstract class Element {
 	protected _mounted = false;
 	protected _oldWidget?: Widget;
 	protected _dirty = true;
+	/** Returns whether the Element is currently marked for rebuild. */
 	isDirty() {
 		return this._dirty;
 	}
@@ -43,10 +57,15 @@ export abstract class Element {
 		if (this.widget) {
 			return `${getmetatable(this.widget)}`;
 		} else {
-			return "Unknown widget";
+			return "Unknown Widget";
 		}
 	}
 
+	/** Recursively prints a tree of itself and its children.
+	 *
+	 * @param level The nesting level of this Element that will
+	 * be represented using whitespace.
+	 */
 	debugPrint(level = 0) {
 		let out = "";
 		for (let i = 0; i < level; i++) {
@@ -73,8 +92,10 @@ export abstract class Element {
 		return this._children[0].findChildWithComponent();
 	}
 
+	/** Climbs up the tree and calls the same method on its parent, until an
+	 * overload of this method (such as on {@link FoundationElement}) will
+	 * connect the Roblox component to a higher component. */
 	connectComponentToParent(component: RbxComponent): Element | undefined {
-		// print("cCTP");
 		return this._parent?.connectComponentToParent(component);
 	}
 
@@ -95,6 +116,9 @@ export abstract class Element {
 		}
 	}
 
+	/** Creates a new Element from a {@link Widget}, sets this Element as its
+	 * parent, updates it and places it in this Element's child list at the `index`.
+	 */
 	inflateWidget(widget: Widget, index?: number): Element {
 		const element = widget.createElement();
 		element.mount(this);
@@ -114,17 +138,25 @@ export abstract class Element {
 		return;
 	}
 
+	/** Sets this element's parent, build owner and sets it as mounted. */
 	mount(parent: Element, owner?: RootElement) {
 		this._parent = parent;
 		this._owner = owner ? owner : parent._owner;
 		this._mounted = true;
 	}
 
+	/** Resets this Element's `_mounted` to `false` and recursively unmounts
+	 * all of its children as well.
+	 */
 	unmount() {
 		this._mounted = false;
 		// print(`Unmounted ${this.widgetName()}`);
 		for (const child of this._children) {
 			child.unmount();
+		}
+
+		for (const [provider, _selector] of this.providers) {
+			provider.removeDependent(this);
 		}
 	}
 
@@ -166,44 +198,97 @@ export abstract class Element {
 		}
 	}
 
+	/** Marks this Element as `_dirty` and adds it to its build owner's
+	 * set of elements to rebuild.
+	 */
 	markRebuild() {
 		this._dirty = true;
 		this._owner?.addToRebuild(this);
 	}
 
+	/** Performs whatever actions are necessary to rebuild this Element, such as
+	 * calling `build()` if it represents a {@link StatelessWidget} or
+	 * {@link HookWidget} or updating and laying out a component if it
+	 * represents a {@link FoundationWidget}. By default will also reset `_dirty`
+	 * to `false`.
+	 */
 	rebuild() {
 		this._dirty = false;
 	}
 
-	mounted() {
+	/** Returns `true` if the Element is set as mounted. */
+	isMounted() {
 		return this._mounted;
 	}
 
-	private _findInheritedWidgetElement<T>(
-		cons: new (...args: any[]) => InheritedWidget<T>,
-		aspect?: object,
-	): InheritedElement<T> {
+	private _findInheritedWidgetInAncestors<T, A>(
+		cons: new (...args: any[]) => InheritedWidget<T, A>,
+	): Provider<T, A> {
 		let current = this._parent;
 		for (; ;) {
 			if (!current) {
-				throw new Error(`InheritedWidget ${cons} not found in ancestors`);
+				throw new Error(`Provider ${cons} not found in ancestors`);
 			} else if (current instanceof InheritedElement && current.widget instanceof cons) {
-				return current as InheritedElement<T>;
+				return current as Provider<T, A>;
 			} else {
 				current = current?._parent;
 			}
 		}
 	}
 
-	watch<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
-		const element = this._findInheritedWidgetElement(cons, aspect);
-		element.updateDependents(this, aspect);
-		return element.widget.value();
+	private _resolveProvider<T, A>(pName: ProviderName<T, A>): Provider<T, A> {
+		if (typeOf(pName) === "function") {
+			const cons = pName as new (...args: any[]) => InheritedWidget<T, A>;
+			const element = this._findInheritedWidgetInAncestors(cons);
+			return element;
+		} else {
+			return pName as Provider<T, A>;
+		}
 	}
 
-	read<T>(cons: new (...args: any[]) => InheritedWidget<T>, aspect?: object): T {
-		const element = this._findInheritedWidgetElement(cons, aspect);
-		return element.widget.value();
+	private providers: Map<Provider<any, any>, Selector<any>> = new Map();
+
+	/** Reads a value from a Provider, either directly or by traversing up the
+	 * tree to find a Provider of the given type.
+	 *
+	 * @param pName Either a Provider, or a type of Provider to be found by
+	 * traversing up the Element tree.
+	 */
+	read<T, A>(pName: ProviderName<T, A>, aspect?: A): T {
+		const provider = this._resolveProvider(pName);
+		const providerA = provider as Provider<T, A>;
+		return providerA.value(aspect);
+	}
+
+	watch<T, A>(pName: ProviderName<T, A>, aspect?: A): T {
+		const provider = this._resolveProvider(pName);
+		this.providers.set(provider, () => true);
+		provider.updateDependent(this, aspect);
+		return provider.value(aspect);
+	}
+
+	select<T, A>(
+		pName: ProviderName<T, A>,
+		_: {
+			aspect?: A;
+			selector: Selector<T>;
+		},
+	): T {
+		const provider = this._resolveProvider(pName);
+		this.providers.set(provider, _.selector);
+		provider.updateDependent(this, _.aspect);
+		return provider.value(_.aspect);
+	}
+
+	announceDependencyChange<T>(dependency: Provider<T>) {
+		const selector = this.providers.get(dependency);
+		if (selector && selector(dependency.value(), dependency.oldValue())) {
+			this.markRebuild();
+		} else {
+			print(
+				`Error: Provider change announced on Element that isn't subscribed to this Provider at ${this.widgetName()}.`,
+			);
+		}
 	}
 
 	constructor(widget?: Widget) {
@@ -432,34 +517,6 @@ export class ProxyElement extends Element {
 	}
 }
 
-export class InheritedElement<T> extends ProxyElement {
-	widget: InheritedWidget<T>;
-
-	private dependents: Map<Element, object | false> = new Map();
-
-	updateDependents(element: Element, aspect?: object) {
-		// print("Adding to dependents: " + element.widgetName());
-		this.dependents.set(element, aspect ?? false);
-	}
-
-	override update(widget: InheritedWidget<T>): void {
-		super.update(widget);
-		const shouldNotify = this.widget.updateShouldNotify(this._oldWidget as InheritedWidget<T>);
-		if (shouldNotify) {
-			// print("shouldNotify");
-			for (const [element, aspect] of this.dependents) {
-				// print("shouldNotify" + element.widgetName());
-				// element.markRebuild();
-				task.defer(() => element.markRebuild());
-			}
-		}
-	}
-
-	constructor(widget: InheritedWidget<T>) {
-		super(widget);
-		this.widget = widget;
-	}
-}
 
 export class RootElement extends Element {
 	// TODO: Use

@@ -6,6 +6,7 @@ import { RobloxTextButton } from "./button";
 import { useRef, useState } from "./hook_primitives";
 
 const Players = game.GetService("Players");
+// hi 
 
 const PlayerGui = Players.LocalPlayer.WaitForChild("PlayerGui") as PlayerGui;
 
@@ -119,8 +120,8 @@ class Topic {
 	}
 }
 
-class TopicWidget extends InheritedWidget<Topic> {
-	updateShouldNotify(oldWidget: InheritedWidget<Topic>): boolean {
+class TopicWidget extends InheritedWidget<Topic, void> {
+	updateShouldNotify(oldWidget: InheritedWidget<Topic, void>): boolean {
 		return true;
 	}
 

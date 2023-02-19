@@ -6,13 +6,13 @@ import {
 	BuildContext,
 	Element,
 	FoundationElement,
-	InheritedElement,
 	ProxyElement,
 	StatefulElement,
 	StatelessElement,
 } from "./element";
 import { BoxConstraints, BoxSize } from "./geometry";
 import { HookElement } from "./hook";
+import { InheritedElement } from "./provider";
 import { State } from "./state";
 import { RbxComponent } from "./types";
 
@@ -128,14 +128,24 @@ export abstract class ProxyWidget implements Widget {
 	}
 }
 
-/** Note: May have a bug that occasionally causes subscribed Widgets not to mark
+/**
+ * Propagates a value down the tree. The value can be read or observed by
+ * calling a build context's `read`, `watch` or `select` methods on the class
+ * name.
+ *
+ * Note: May have a bug that occasionally causes subscribed Widgets not to mark
  * for rebuild. Usually occurs once per application run. */
-export abstract class InheritedWidget<T> extends ProxyWidget {
-	createElement(): ProxyElement {
+export abstract class InheritedWidget<T, A> extends ProxyWidget {
+	override createElement(): ProxyElement {
 		return new InheritedElement(this);
 	}
 
-	abstract updateShouldNotify(oldWidget: InheritedWidget<T>): boolean;
+	/** {@link InheritedElement} will call this when the Widget is rebuilt to
+	 * check if subscribers should be notified.
+	 *
+	 * @param oldWidget The old Widget instance for comparing.
+	 */
+	abstract updateShouldNotify(oldWidget: InheritedWidget<T, A>): boolean;
 
 	abstract value(): T;
 }

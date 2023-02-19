@@ -1,6 +1,8 @@
 import { BuildContext } from "./element";
 import { Hook, HookElement, HookState, use } from "./hook";
 
+/** A container that holds a single value. The value can be modified directly.
+ * */
 export class ObjectRef<T> {
 	value: T;
 
@@ -42,14 +44,24 @@ class _MemoizedHookState<R> implements HookState<R, _MemoizedHook<R>> {
 	dispose(): void { }
 }
 
+/** Remembers the value returned by the `valueBuilder` function and returns it
+ * across rebuilds. If anything in the `keys` array changes, the value will be
+ * rebuilt and replaced by the `valueBuilder` function.
+ */
 export function useMemoized<T>(valueBuilder: () => T, keys?: Array<object>): T {
 	return use(new _MemoizedHook(valueBuilder, keys ?? []));
 }
 
+/** Remembers a value in {@link ObjectRef} and returns it across rebuilds. Changing
+ * this value will not cause any side effects (such as rebuilds).
+ */
 export function useRef<R>(value: R): ObjectRef<R> {
 	return use(new _MemoizedHook(() => new ObjectRef(value), []));
 }
 
+/** Remembers a function and returns it across rebuilds. The saved function will
+ * be rebuilt if anything in the `keys` array changes.
+ */
 export function useCallback(callback: Callback, keys?: Array<object>): Callback {
 	return use(new _MemoizedHook(() => callback, keys ?? []));
 }
@@ -94,8 +106,9 @@ class _ValueChangedHookState<T, R> implements HookState<R, _ValueChangedHook<T, 
 }
 
 /**
- * A {@link hook.Hook | Hook} that fires a callback whenever the value provided changes between
- * rebuilds, and returns the result of that callback.
+ * A {@link Hook} that fires a callback whenever the value provided changes between
+ * rebuilds, and returns the result of that callback. The callback also receives the
+ * new value and the old result of the callback itself, if any.
  *
  * @param value The value to check against
  * @param callback A function that will be called when the value is no longer
@@ -209,7 +222,7 @@ class _StateHookState<R> implements HookState<UseStateReturn<R>, _StateHook<R>> 
 }
 
 /**
- * A {@link hook.Hook | Hook} for persisting values across rebuilds. Returns
+ * A {@link Hook} for persisting values across rebuilds. Returns
  * the value and a function for changing the value, which will trigger a
  * rebuild.
  *

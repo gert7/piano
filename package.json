@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rbxtsc",
     "watch": "rbxtsc -w --usePolling",
-    "docs": "typedoc src/client/index.ts"
+    "docs": "typedoc"
   },
   "keywords": [],
   "author": "",
