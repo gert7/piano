@@ -134,15 +134,20 @@ class TopicWidget extends InheritedWidget<Topic, void> {
 		super(params.child);
 		this.topic = params.topic;
 	}
+
+	static of(context: BuildContext): Topic {
+		const element = context.findInheritedProviderInAncestors(TopicWidget);
+		return context.watch(element);
+	}
 }
 
 class MyConsumerWidget extends StatelessWidget {
 	build(context: Element): Widget {
-		const topicValue = context.watch(TopicWidget);
+		const topic = TopicWidget.of(context);
 
 		return new Padding({
 			edgeInsets: EdgeInsets.all(8.0),
-			child: new TextWidget(topicValue.name),
+			child: new TextWidget(topic.name),
 			// child: new TextWidget("Hello World"),
 		});
 	}
@@ -150,12 +155,13 @@ class MyConsumerWidget extends StatelessWidget {
 
 class HomeWidget extends HookWidget {
 	override build(context: BuildContext): Widget {
-		const [count, setCount] = useState(() => 1);
-		print(count);
-
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),
-			child: new TextWidget("Bonjoru"),
+			// child: new TextWidget("Bonjoru"),
+			child: new TopicWidget({
+				topic: new Topic("cheeses"),
+				child: new MyConsumerWidget(),
+			}),
 		});
 	}
 }

@@ -220,7 +220,8 @@ export abstract class Element {
 		return this._mounted;
 	}
 
-	private _findInheritedWidgetInAncestors<T, A>(
+	/** Returns the {@link InheritedElement} that corresponds to an InheritedWidget. */
+	findInheritedProviderInAncestors<T, A>(
 		cons: new (...args: any[]) => InheritedWidget<T, A>,
 	): Provider<T, A> {
 		let current = this._parent;
@@ -228,52 +229,39 @@ export abstract class Element {
 			if (!current) {
 				throw new Error(`Provider ${cons} not found in ancestors`);
 			} else if (current instanceof InheritedElement && current.widget instanceof cons) {
-				return current as Provider<T, A>;
+				return current;
 			} else {
 				current = current?._parent;
 			}
 		}
 	}
 
-	private _resolveProvider<T, A>(pName: ProviderName<T, A>): Provider<T, A> {
-		if (typeOf(pName) === "function") {
-			const cons = pName as new (...args: any[]) => InheritedWidget<T, A>;
-			const element = this._findInheritedWidgetInAncestors(cons);
-			return element;
-		} else {
-			return pName as Provider<T, A>;
-		}
-	}
-
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private providers: Map<Provider<any, any>, Selector<any>> = new Map();
 
 	/** Reads a value from a Provider, either directly or by traversing up the
 	 * tree to find a Provider of the given type.
 	 *
-	 * @param pName Either a Provider, or a type of Provider to be found by
+	 * @param provider Either a Provider, or a type of Provider to be found by
 	 * traversing up the Element tree.
 	 */
-	read<T, A>(pName: ProviderName<T, A>, aspect?: A): T {
-		const provider = this._resolveProvider(pName);
-		const providerA = provider as Provider<T, A>;
-		return providerA.value(aspect);
+	read<T, A>(provider: Provider<T, A>, aspect?: A): T {
+		return provider.value(aspect);
 	}
 
-	watch<T, A>(pName: ProviderName<T, A>, aspect?: A): T {
-		const provider = this._resolveProvider(pName);
+	watch<T, A>(provider: Provider<T, A>, aspect?: A): T {
 		this.providers.set(provider, () => true);
 		provider.updateDependent(this, aspect);
 		return provider.value(aspect);
 	}
 
 	select<T, A>(
-		pName: ProviderName<T, A>,
+		provider: Provider<T, A>,
 		_: {
 			aspect?: A;
 			selector: Selector<T>;
 		},
 	): T {
-		const provider = this._resolveProvider(pName);
 		this.providers.set(provider, _.selector);
 		provider.updateDependent(this, _.aspect);
 		return provider.value(_.aspect);
@@ -439,11 +427,6 @@ export class FoundationElement extends Element {
 
 export class StatelessElement extends Element {
 	widget: StatelessWidget;
-
-	// override update(widget: StatelessWidget): void {
-	// 	super.update(widget);
-	// 	this.rebuild();
-	// }
 
 	override rebuild() {
 		if (!this._dirty) return;
