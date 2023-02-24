@@ -44,12 +44,20 @@ export class BoxConstraints implements SizeConstraints {
 		return new BoxConstraints(this.minWidth, this.maxWidth, this.minHeight, this.maxHeight);
 	}
 
+	static tight(width: constraint, height: constraint): BoxConstraints {
+		return new BoxConstraints(width, width, height, height);
+	}
+
 	isTight(): boolean {
 		return this.minWidth === this.maxWidth && this.minHeight === this.maxHeight;
 	}
 
 	static fromVector2(vec2: Vector2): BoxConstraints {
 		return new BoxConstraints(0, vec2.X, 0, vec2.Y);
+	}
+
+	static unbounded(): BoxConstraints {
+		return new BoxConstraints(0, "Infinity", 0, "Infinity");
 	}
 
 	toVector2(): Vector2 {
@@ -65,6 +73,10 @@ export class BoxConstraints implements SizeConstraints {
 		)
 			return false;
 		return true;
+	}
+
+	toString() {
+		return `${this.minWidth} - ${this.maxWidth}; ${this.minHeight} - ${this.maxHeight}`;
 	}
 }
 

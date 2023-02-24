@@ -1,5 +1,5 @@
 import { expandRbxComponentToConstraints } from "./basic";
-import { FoundationElement } from "./element";
+import { Element, FoundationElement } from "./element";
 import { BoxConstraints, udim2Vector2 } from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget } from "./widget";
@@ -27,11 +27,7 @@ export class RobloxTextButton extends FoundationWidget {
 		return button;
 	}
 
-	_layout(
-		component: GuiObject,
-		constraints: BoxConstraints,
-		children: FoundationElement[],
-	): Vector2 {
+	_layout(component: GuiObject, constraints: BoxConstraints, children: Element[]): Vector2 {
 		return expandRbxComponentToConstraints(component, constraints);
 	}
 

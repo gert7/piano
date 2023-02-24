@@ -1,5 +1,5 @@
 import { BoxConstraints, EdgeInsets } from "./geometry";
-import { Padding, Row, TextWidget } from "./basic";
+import { Center, Flexible, Padding, Row, TextWidget } from "./basic";
 import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "./widget";
 import { BuildContext, Element, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
@@ -147,7 +147,7 @@ class MyConsumerWidget extends StatelessWidget {
 
 		return new Padding({
 			edgeInsets: EdgeInsets.all(8.0),
-			child: new TextWidget(topic.name),
+			child: new TextWidget("Topic is " + topic.name),
 			// child: new TextWidget("Hello World"),
 		});
 	}
@@ -155,12 +155,27 @@ class MyConsumerWidget extends StatelessWidget {
 
 class HomeWidget extends HookWidget {
 	override build(context: BuildContext): Widget {
+		const [some, setSome] = useState(() => 1);
+
 		return new Padding({
 			edgeInsets: EdgeInsets.all(64.0),
 			// child: new TextWidget("Bonjoru"),
 			child: new TopicWidget({
-				topic: new Topic("cheeses"),
-				child: new MyConsumerWidget(),
+				topic: new Topic(`${some}`),
+				child: new Row({
+					children: [
+						new Flexible({
+							flex: 2,
+							child: new RobloxTextButton("increment " + some, () =>
+								setSome(some + 1),
+							),
+						}),
+						new Flexible({
+							flex: 1,
+							child: new Center({ child: new MyConsumerWidget() }),
+						}),
+					],
+				}),
 			}),
 		});
 	}

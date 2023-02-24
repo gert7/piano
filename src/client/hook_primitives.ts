@@ -182,7 +182,7 @@ export function useEffect(effect: () => () => void, keys: Array<object>, dispose
 	use(new _EffectHook(effect, keys, disposeNow));
 }
 
-export type UseStateReturn<R> = [R, (value: R) => void];
+export type UseStateReturn<R> = LuaTuple<[R, (value: R) => void]>;
 
 class _StateHook<R> implements Hook<UseStateReturn<R>> {
 	keys = [];
@@ -215,7 +215,7 @@ class _StateHookState<R> implements HookState<UseStateReturn<R>, _StateHook<R>> 
 	};
 
 	build(context: BuildContext): UseStateReturn<R> {
-		return [this.value, this.setter];
+		return [this.value, this.setter] as UseStateReturn<R>;
 	}
 
 	dispose(): void { }

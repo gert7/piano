@@ -1,4 +1,8 @@
+"use strict";
+
+import { Constructor } from "./constructor";
 import { BuildContext, Element, FoundationElement } from "./element";
+import { Error } from "./error";
 import {
 	BoxConstraints,
 	BoxSize,
@@ -12,11 +16,7 @@ import { RbxComponent } from "./types";
 import { FoundationWidget, Widget } from "./widget";
 
 export class TextWidget extends FoundationWidget {
-	_layout(
-		component: GuiObject,
-		constraints: BoxConstraints,
-		children: FoundationElement[],
-	): void { }
+	_layout(component: GuiObject, constraints: BoxConstraints, children: Element[]): void { }
 	text: string;
 
 	constructor(text: string) {
@@ -76,11 +76,7 @@ export class BaseFrame extends FoundationWidget {
 		return udim2Vector2(frame.Size);
 	}
 
-	override _layout(
-		frame: RbxComponent,
-		constraints: BoxConstraints,
-		children: Array<FoundationElement>,
-	) {
+	override _layout(frame: RbxComponent, constraints: BoxConstraints, children: Element[]) {
 		expandRbxComponentToConstraints(frame, constraints);
 	}
 
@@ -91,6 +87,7 @@ export class BaseFrame extends FoundationWidget {
 		frame.ScrollBarThickness = 0;
 		frame.ScrollingEnabled = false;
 		frame.BorderMode = Enum.BorderMode.Inset;
+		frame.BorderSizePixel = 0;
 		return frame;
 	}
 }
@@ -101,8 +98,9 @@ export class Padding extends BaseFrame {
 	override _layout(
 		frame: RbxComponent,
 		constraints: BoxConstraints,
-		children: FoundationElement[], // TODO: pass children indirectly
+		iChildren: Element[], // TODO: pass children indirectly
 	): void {
+		const children = Element.findChildrenWithComponents(iChildren);
 		let [paddedW, paddedH] = getRelativeSize(frame);
 		const horizontalPadding = this.edgeInsets.start + this.edgeInsets.ending;
 		const verticalPadding = this.edgeInsets.top + this.edgeInsets.bottom;
@@ -144,49 +142,77 @@ export class Flex extends BaseFrame {
 	desiredSpace = 8.0;
 	direction: Direction;
 
-	override _layout(
-		frame: GuiObject,
-		constraints: BoxConstraints,
-		children: FoundationElement[],
-	): void {
-		debug.profilebegin("PianoRowLayout");
-		super._layout(frame, constraints, children);
-		const selfSize = super._size(frame);
-		const totalLength = mainAxisValue(selfSize, this.direction);
-		const evenDivide = constraints.clone();
+	private constrainedLength(constraints: BoxConstraints, length: number): BoxConstraints {
 		switch (this.direction) {
 			case Direction.Horizontal:
-				evenDivide.maxWidth = constraints.maxWidthN() / children.size();
-				break;
+				return new BoxConstraints(
+					length,
+					length,
+					constraints.minHeight,
+					constraints.maxHeight,
+				);
 			case Direction.Vertical:
-				evenDivide.maxHeight = constraints.maxHeightN() / children.size();
-				break;
+				return new BoxConstraints(
+					constraints.minWidth,
+					constraints.maxWidth,
+					length,
+					length,
+				);
 		}
-		const sizes: Vector2[] = [];
+	}
 
-		let childLengths = 0;
-		for (const child of children) {
-			child.layout(evenDivide);
-			const size = child.size();
-			sizes.push(size);
-			childLengths += mainAxisValue(size, this.direction);
+	private widgetName() {
+		return this.direction === Direction.Horizontal ? "Row" : "Column";
+	}
+
+	override _layout(frame: GuiObject, constraints: BoxConstraints, iChildren: Element[]): void {
+		print("Flex _layout");
+		debug.profilebegin("PianoFlexLayout");
+
+		const children = findChildrenWithInfixData(iChildren, Flexible);
+		expandRbxComponentToConstraints(frame, constraints);
+		const selfSize = super._size(frame);
+
+		const inflexibles = children.filter((cw) => cw.infixElement === undefined);
+		const flexibles = children.filter((cw) => cw.infixElement !== undefined);
+
+		inflexibles.forEach((cw) => cw.child.layout(BoxConstraints.unbounded()));
+		inflexibles.forEach((cw) => print(cw.child.size()));
+		const remainingLength =
+			constraints.maxWidthN() -
+			inflexibles.reduce((a, cw) => a + mainAxisValue(cw.child.size(), this.direction), 0);
+
+		if (remainingLength < 0) {
+			print(`Error: ${this.widgetName()} overflowed by ${-remainingLength} pixels.`);
 		}
 
-		const spacing = (totalLength - childLengths) / (children.size() + 1);
-		let mainAxisDistance = spacing;
-		children.forEach((child, i) => {
+		const totalFlex = flexibles.reduce((a, cw) => a + cw.infixWidget!.flex, 0);
+		const singleFlexLength = remainingLength / totalFlex;
+		flexibles.forEach((cw) =>
+			cw.infixElement!.layout(
+				this.constrainedLength(constraints, singleFlexLength * cw.infixWidget!.flex),
+			),
+		);
+
+		flexibles.forEach((cw) => print(cw.child.size()));
+
+		let progress = 0;
+
+		for (const cw of children) {
+			const child = cw.infixElement !== undefined ? cw.infixElement : cw.child;
 			switch (this.direction) {
 				case Direction.Horizontal:
-					child.setPosition(new UDim2(0, mainAxisDistance, 0, child.position().Y));
+					child.setPosition(new UDim2(0, progress, 0, 0));
+					progress += child.size().X;
 					break;
 				case Direction.Vertical:
-					child.setPosition(new UDim2(0, child.position().X, 0, mainAxisDistance));
+					child.setPosition(new UDim2(0, 0, 0, progress));
+					progress += child.size().Y;
 					break;
 			}
-			mainAxisDistance += mainAxisValue(sizes[i], this.direction);
-			mainAxisDistance += spacing;
-		});
-		debug.profileend();
+		}
+
+		debug.profileend(); // PianoFlexLayout
 	}
 
 	constructor(direction: Direction, params: { children: Array<Widget>; spreadEvenly?: boolean }) {
@@ -194,6 +220,83 @@ export class Flex extends BaseFrame {
 		this.direction = direction;
 		this.spreadEvenly = params.spreadEvenly ?? this.spreadEvenly;
 	}
+}
+
+export interface InfixWidget { };
+
+export interface ChildWithInfixData<IW extends InfixWidget> {
+	infixWidget: IW | undefined;
+	infixElement: FoundationElement | undefined;
+	child: FoundationElement;
+}
+
+export enum FlexFit {
+	tight,
+	loose,
+}
+
+export class Flexible extends BaseFrame implements InfixWidget {
+	flex: number;
+	fit: FlexFit;
+
+	_layout(component: GuiObject, constraints: BoxConstraints, children: Element[]): void {
+		print(`constraints: ${constraints.toString()}`);
+		expandRbxComponentToConstraints(component, constraints);
+		const child = Element.findChildrenWithComponents(children)[0];
+		switch (this.fit) {
+			case FlexFit.loose:
+				child.layout(new BoxConstraints(0, constraints.maxWidth, 0, constraints.maxHeight));
+				break;
+			case FlexFit.tight:
+				child.layout(constraints);
+				break;
+		}
+	}
+
+	constructor(params: { child: Widget; flex: number; fit?: FlexFit }) {
+		super([params.child]);
+		this.flex = params.flex;
+		this.fit = params.fit ?? FlexFit.loose;
+	}
+}
+
+export class Expanded extends Flexible {
+	constructor(params: { child: Widget; flex: number }) {
+		super({ ...params, fit: FlexFit.tight });
+	}
+}
+
+export function findChildrenWithInfixData<IW extends InfixWidget>(
+	children: Element[],
+	infixWidgetCons: Constructor<IW>,
+): ChildWithInfixData<IW>[] {
+	return children.map((child) => {
+		let current: Element | undefined = child;
+		let previous = current?.widgetName();
+		let infix: FoundationElement | undefined;
+		let infixWidget: IW | undefined;
+		for (; ;) {
+			if (!current) {
+				throw new Error(`Childless widget at ${previous}`);
+			} else if (current.widget instanceof infixWidgetCons && infix === undefined) {
+				print("Found infix data");
+				previous = current.widgetName();
+				infix = current as FoundationElement;
+				infixWidget = current.widget;
+			} else if (
+				current instanceof FoundationElement &&
+				!(current.widget instanceof infixWidgetCons)
+			) {
+				return {
+					infixWidget: infixWidget,
+					infixElement: infix,
+					child: current,
+				};
+			} else {
+				current = current._children[0];
+			}
+		}
+	});
 }
 
 export class Row extends Flex {
@@ -206,6 +309,50 @@ export class Column extends Flex {
 	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
 		super(Direction.Vertical, params);
 	}
+}
+
+export class Center extends BaseFrame {
+	widthFactor?: number;
+	heightFactor?: number;
+
+	_layout(frame: GuiObject, constraints: BoxConstraints, children: Element[]): void {
+		let newWidth = 0;
+		let newHeight = 0;
+		const child = Element.findChildrenWithComponents(children)[0];
+		child.layout(constraints);
+		const childSize = child.size();
+		if (this.widthFactor === undefined && constraints.maxWidth !== "Infinity") {
+			newWidth = constraints.maxWidth;
+		}
+		if (this.heightFactor === undefined && constraints.maxHeight !== "Infinity") {
+			newHeight = constraints.maxHeight;
+		}
+		if (this.widthFactor === undefined && constraints.maxWidth === "Infinity") {
+			newWidth = childSize.X;
+		}
+		if (this.heightFactor === undefined && constraints.maxHeight === "Infinity") {
+			newHeight = childSize.Y;
+		}
+		if (this.widthFactor !== undefined) {
+			newWidth = childSize.X * this.widthFactor;
+		}
+		if (this.heightFactor !== undefined) {
+			newHeight = childSize.Y * this.heightFactor;
+		}
+		frame.Size = new UDim2(0, newWidth, 0, newHeight);
+		const childX = newWidth / 2 - childSize.X / 2;
+		const childY = newHeight / 2 - childSize.Y / 2;
+		child.setPosition(new UDim2(0, childX, 0, childY));
+	}
+
+	constructor(params: { widthFactor?: number; heightFactor?: number; child: Widget }) {
+		super([params.child]);
+		this.widthFactor = params.widthFactor;
+		this.heightFactor = params.heightFactor;
+	}
+}
+
+export class Align extends BaseFrame {
 }
 
 export class RobloxComponentWidget extends FoundationWidget {
@@ -221,9 +368,9 @@ export class RobloxComponentWidget extends FoundationWidget {
 		return this.component;
 	}
 
-	_layout(component: GuiObject, constraints: BoxConstraints, _: FoundationElement[]) {
+	_layout(component: GuiObject, constraints: BoxConstraints, _: Element[]) {
 		if (this.layout) {
-			return expandRbxComponentToConstraints(component, constraints);
+			expandRbxComponentToConstraints(component, constraints);
 		}
 		// return constraints.toVector2();
 	}

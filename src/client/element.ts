@@ -7,6 +7,7 @@
  * be unmounted, disposed, and replaced with a new one.
  * @module
  */
+import { Constructor } from "./constructor";
 import { Error } from "./error";
 import { BoxConstraints, BoxSize } from "./geometry";
 import { Provider } from "./provider";
@@ -100,8 +101,8 @@ export abstract class Element {
 
 	/** Collapse this element's child elements' subtrees to the first
 	 *  FoundationElements that are found. */
-	findChildrenWithComponents(): Array<FoundationElement> {
-		return this._children.map((e) => e.findChildWithComponent());
+	static findChildrenWithComponents(children: Element[]): Array<FoundationElement> {
+		return children.map((e) => e.findChildWithComponent());
 	}
 
 	/** Traverse down the element tree and attach RbxComponents when
@@ -109,7 +110,7 @@ export abstract class Element {
 	 */
 	attachComponents(parent: RbxComponent) {
 		// print("attachComponents");
-		const children = this.findChildrenWithComponents();
+		const children = Element.findChildrenWithComponents(this._children);
 		for (const c of children) {
 			c.attachComponents(parent);
 		}
@@ -222,7 +223,7 @@ export abstract class Element {
 
 	/** Returns the {@link InheritedElement} that corresponds to an InheritedWidget. */
 	findInheritedProviderInAncestors<T, A>(
-		cons: new (...args: any[]) => InheritedWidget<T, A>,
+		cons: Constructor<InheritedWidget<T, A>>,
 	): Provider<T, A> {
 		let current = this._parent;
 		for (; ;) {
@@ -267,7 +268,7 @@ export abstract class Element {
 		return provider.value(_.aspect);
 	}
 
-	announceDependencyChange<T>(dependency: Provider<T>) {
+	announceDependencyChange<T, A>(dependency: Provider<T, A>) {
 		const selector = this.providers.get(dependency);
 		if (selector && selector(dependency.value(), dependency.oldValue())) {
 			this.markRebuild();
@@ -353,7 +354,7 @@ export class FoundationElement extends Element {
 	layout(constraints: BoxConstraints) {
 		// print(`Layout on ${this.widgetName()}`);
 		this.constraints = constraints;
-		this.widget._layout(this.component, constraints, this.findChildrenWithComponents());
+		this.widget._layout(this.component, constraints, this._children);
 	}
 
 	size(): BoxSize {

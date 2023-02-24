@@ -11,7 +11,7 @@ import { Element } from "./element";
  * @typeParam V The value that the Element returns
  * @typeParam A An optional aspect type for subscribing only to select changes
  */
-export interface Provider<V, A = any> {
+export interface Provider<V, A = void> {
 	/** Adds an element to a list of subscribers that the Element maintains. */
 	updateDependent(element: Element, aspect?: A): void;
 

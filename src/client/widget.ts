@@ -31,7 +31,7 @@ export abstract class FoundationWidget implements Widget {
 	abstract _layout(
 		component: RbxComponent,
 		constraints: BoxConstraints,
-		children: Array<FoundationElement>,
+		children: Element[],
 	): void;
 
 	abstract _size(component: RbxComponent): BoxSize;
@@ -136,7 +136,7 @@ export abstract class ProxyWidget implements Widget {
  *
  * Note: May have a bug that occasionally causes subscribed Widgets not to mark
  * for rebuild. Usually occurs once per application run. */
-export abstract class InheritedWidget<T, A> extends ProxyWidget {
+export abstract class InheritedWidget<T, A = void> extends ProxyWidget {
 	override createElement(): ProxyElement {
 		return new InheritedElement(this);
 	}
