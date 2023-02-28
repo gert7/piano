@@ -7,10 +7,10 @@ export type constraint = number | "Infinity";
 export class BoxConstraints implements SizeConstraints {
 	static Infinity: constraint = "Infinity";
 
-	minWidth: constraint;
-	maxWidth: constraint;
-	minHeight: constraint;
-	maxHeight: constraint;
+	readonly minWidth: constraint;
+	readonly maxWidth: constraint;
+	readonly minHeight: constraint;
+	readonly maxHeight: constraint;
 
 	constructor(
 		minWidth?: constraint,
@@ -80,6 +80,10 @@ export class BoxConstraints implements SizeConstraints {
 	}
 }
 
+/** Executes the same function on a {@link Vector2} and returns both results as a tuple. */
+export const mapVector2 = (f: (d: number) => number, vec: Vector2): LuaTuple<[number, number]> =>
+	[f(vec.X), f(vec.Y)] as LuaTuple<[number, number]>;
+
 export type BoxSize = Vector2;
 
 export function udim2Vector2(udim2: UDim2): Vector2 {
@@ -99,11 +103,11 @@ export function clampToConstraints(size: BoxSize, constraints: BoxConstraints): 
 
 export class EdgeInsets {
 	/** Left in left-to-right context */
-	start: number;
+	readonly start: number;
 	/** Right in left-to-right context */
-	ending: number;
-	top: number;
-	bottom: number;
+	readonly ending: number;
+	readonly top: number;
+	readonly bottom: number;
 
 	constructor(insets: { start: number; end: number; top: number; bottom: number }) {
 		this.start = insets.start ?? 0.0;
@@ -129,4 +133,37 @@ export function mainAxisValue(vec: Vector2, direction: Direction): number {
 		case Direction.Vertical:
 			return vec.Y;
 	}
+}
+
+export class Alignment {
+	readonly x: number;
+	readonly y: number;
+
+	constructor(x: number, y: number) {
+		this.x = x;
+		this.y = y;
+	}
+
+	static topLeft = new Alignment(-1.0, -1.0);
+	static topCenter = new Alignment(0.0, -1.0);
+	static topRight = new Alignment(1.0, -1.0);
+	static centerLeft = new Alignment(-1.0, 0.0);
+	static center = new Alignment(0.0, 0.0);
+	static centerRight = new Alignment(1.0, 0.0);
+	static bottomLeft = new Alignment(-1.0, 1.0);
+	static bottomCenter = new Alignment(0.0, 1.0);
+	static bottomRight = new Alignment(1.0, 1.0);
+
+	// /** Converts to a Vector2 whose x and y are in the range of 0 to 1. */
+	// clampToPositive(): Vector2 {
+	// 	const x = (this.x + 1.0) / 2;
+	// 	const y = (this.y + 1.0) / 2;
+	// 	return new Vector2(x, y);
+	// }
+}
+
+/** Returns the top-left position of a rectangle based on an {@link Alignment}
+ * and a container size. */
+export function manualAlign(childSize: BoxSize, alignment: Alignment, containerSize: BoxSize) {
+	const [xCenter, yCenter] = mapVector2((d) => d / 2, containerSize);
 }
