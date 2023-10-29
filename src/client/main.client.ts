@@ -1,9 +1,10 @@
-import { BoxConstraints, EdgeInsets } from "./geometry";
+import { EdgeInsets } from "./geometry";
 import { Center, Flexible, Padding, Row, TextWidget } from "./basic";
 import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "./widget";
 import { BuildContext, Element, RootElement } from "./element";
 import { RobloxTextButton } from "./button";
 import { useRef, useState } from "./hook_primitives";
+import { mountPiano } from "./mount";
 
 const Players = game.GetService("Players");
 
@@ -11,33 +12,6 @@ const PlayerGui = Players.LocalPlayer.WaitForChild("PlayerGui") as PlayerGui;
 
 const ScreenGui = new Instance("ScreenGui");
 ScreenGui.Parent = PlayerGui;
-
-export function mount(rootNode: GuiBase2d, home: Widget) {
-	const rootFrame = new Instance("ScrollingFrame");
-	rootFrame.Position = new UDim2(0, 0, 0, 0);
-	rootFrame.Size = new UDim2(1, 0, 1, 0);
-	rootFrame.BackgroundTransparency = 1.0;
-	rootFrame.ScrollingEnabled = false;
-	rootFrame.ScrollBarThickness = 0;
-	rootFrame.Parent = rootNode;
-
-	const rootElement = new RootElement((event) => {
-		print("Piano rootElement event received");
-	});
-	const homeElement = home.createElement();
-	rootElement.appendToRoot(homeElement);
-	homeElement.update(home);
-	rootElement.debugPrint();
-	const absSize = rootFrame.AbsoluteSize;
-
-	const constraints = new BoxConstraints(0.0, absSize.X, 0.0, absSize.Y);
-	const foundationRoot = rootElement.findChildWithComponent();
-	foundationRoot.attachComponents(rootFrame);
-	foundationRoot.layout(constraints);
-	rootFrame
-		.GetPropertyChangedSignal("AbsoluteSize")
-		.Connect(() => foundationRoot.layout(BoxConstraints.fromVector2(rootFrame.AbsoluteSize)));
-}
 
 class OneChild extends HookWidget {
 	build(context: Element): Widget {
@@ -181,7 +155,7 @@ class HomeWidget extends HookWidget {
 	}
 }
 
-mount(ScreenGui, new HomeWidget());
+mountPiano(ScreenGui, new HomeWidget());
 
 // print(ScreenGui.AbsoluteSize);
 

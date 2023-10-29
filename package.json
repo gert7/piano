@@ -1,18 +1,10 @@
 {
   "name": "piano",
   "version": "1.0.0",
-  "description": "Flutter for Roblox",
-  "main": "src/client/index.ts",
-  "scripts": {
-    "build": "rbxtsc",
-    "watch": "rbxtsc -w --usePolling",
-    "docs": "typedoc"
-  },
-  "keywords": [],
   "author": "",
-  "license": "ISC",
+  "main": "src/client/index.ts",
   "devDependencies": {
-    "@rbxts/compiler-types": "^2.1.0-types.1",
+    "@rbxts/compiler-types": "^2.2.0-types.0",
     "@rbxts/types": "^1.0.661",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
@@ -23,5 +15,13 @@
     "prettier": "^2.8.4",
     "typedoc": "^0.23.25",
     "typescript": "^4.9.5"
+  },
+  "description": "Flutter for Roblox",
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {
+    "build": "rbxtsc",
+    "watch": "rbxtsc -w --usePolling",
+    "docs": "typedoc"
   }
 }

@@ -515,6 +515,8 @@ export class RootElement extends Element {
 		}
 	}
 
+	/** Set this element as the immediate child of the
+	 * root element.. */
 	appendToRoot(element: Element) {
 		this._children[0] = element;
 		this._children[0].mount(this, this);

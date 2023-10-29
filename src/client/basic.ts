@@ -171,7 +171,7 @@ export class Flex extends BaseFrame {
 
 		const children = findChildrenWithInfixData(iChildren, Flexible);
 		expandRbxComponentToConstraints(frame, constraints);
-		const selfSize = super._size(frame);
+		// const selfSize = super._size(frame);
 
 		const inflexibles = children.filter((cw) => cw.infixElement === undefined);
 		const flexibles = children.filter((cw) => cw.infixElement !== undefined);
@@ -222,8 +222,16 @@ export class Flex extends BaseFrame {
 	}
 }
 
-export interface InfixWidget { };
+/** A type of Widget used for providing additional data semantically related to
+ * the children of this Widget. For example {@link Expanded} is a widget that
+ * allows you to specify how much space a child widget should take in a
+ * {@link Row} or {@link Column}.
+ */
+export interface InfixWidget { }
 
+/** Result of a query of children that either may or may not have
+ * an {@link InfixWidget} as a parent.
+ */
 export interface ChildWithInfixData<IW extends InfixWidget> {
 	infixWidget: IW | undefined;
 	infixElement: FoundationElement | undefined;
@@ -260,12 +268,23 @@ export class Flexible extends BaseFrame implements InfixWidget {
 	}
 }
 
+/**  */
 export class Expanded extends Flexible {
 	constructor(params: { child: Widget; flex: number }) {
 		super({ ...params, fit: FlexFit.tight });
 	}
 }
 
+/** Accepts a list of children. Walks through a child if it's an InfixWidget of
+ * type IW and places the infix widget and its element to the
+ * `infixWidget`/`infixElement` fields of the {@link ChildWithInfixData} object
+ * it returns, while placing the child of that Widget in the `child` field. If
+ * the child is not the provided InfixWidget, it will be returned with the
+ * `infix` fields as `undefined`.
+ *
+ * @param children A list of child elements
+ * @param infixWidgetCons The type of {@link InfixWidget} to check for
+ */
 export function findChildrenWithInfixData<IW extends InfixWidget>(
 	children: Element[],
 	infixWidgetCons: Constructor<IW>,
@@ -299,18 +318,30 @@ export function findChildrenWithInfixData<IW extends InfixWidget>(
 	});
 }
 
+/** Layout child widgets in a horizontal array. */
 export class Row extends Flex {
 	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
 		super(Direction.Horizontal, params);
 	}
 }
 
+/** Layout child widgets in a vertical array. */
 export class Column extends Flex {
 	constructor(params: { children: Array<Widget>; spreadEvenly?: boolean }) {
 		super(Direction.Vertical, params);
 	}
 }
 
+/** A widget that centers its child within itself.
+ *
+ * This widget will be as big as possible if its dimensions are constrained and
+ * widthFactor and heightFactor are null. If a dimension is unconstrained and
+ * the corresponding size factor is null then the widget will match its child's
+ * size in that dimension. If a size factor is non-null then the corresponding
+ * dimension of this widget will be the product of the child's dimension and the
+ * size factor. For example if widthFactor is 2.0 then the width of this widget
+ * will always be twice its child's width.
+ */
 export class Center extends BaseFrame {
 	widthFactor?: number;
 	heightFactor?: number;
@@ -355,6 +386,7 @@ export class Center extends BaseFrame {
 export class Align extends BaseFrame {
 }
 
+/** This Widget can be used to place a Roblox Component directly in the tree. */
 export class RobloxComponentWidget extends FoundationWidget {
 	_size(component: RbxComponent): Vector2 {
 		return udim2Vector2(component.Size);

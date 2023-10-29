@@ -40,6 +40,22 @@ export class BoxConstraints implements SizeConstraints {
 		}
 	}
 
+	minWidthN(): number {
+		if (this.minWidth !== "Infinity") {
+			return this.minWidth;
+		} else {
+			return 0;
+		}
+	}
+
+	minHeightN(): number {
+		if (this.minHeight !== "Infinity") {
+			return this.minHeight;
+		} else {
+			return 0;
+		}
+	}
+
 	clone(): BoxConstraints {
 		return new BoxConstraints(this.minWidth, this.maxWidth, this.minHeight, this.maxHeight);
 	}
@@ -66,10 +82,10 @@ export class BoxConstraints implements SizeConstraints {
 
 	checkConstraints(boxSize: BoxSize): boolean {
 		if (
-			boxSize.X > this.maxWidth ||
-			boxSize.Y > this.maxHeight ||
-			boxSize.X < this.minWidth ||
-			boxSize.Y < this.minHeight
+			boxSize.X > this.maxWidthN() ||
+			boxSize.Y > this.maxHeightN() ||
+			boxSize.X < this.minWidthN() ||
+			boxSize.Y < this.minHeightN()
 		)
 			return false;
 		return true;
@@ -92,10 +108,10 @@ export function udim2Vector2(udim2: UDim2): Vector2 {
 
 export function clampToConstraints(size: BoxSize, constraints: BoxConstraints): BoxSize {
 	let [newWidth, newHeight] = [size.X, size.Y];
-	if (newWidth > constraints.maxWidth) {
+	if (newWidth > constraints.maxWidthN()) {
 		newWidth = constraints.maxWidthN();
 	}
-	if (newHeight > constraints.maxHeight) {
+	if (newHeight > constraints.maxHeightN()) {
 		newHeight = constraints.maxHeightN();
 	}
 	return new Vector2(newWidth, newHeight);
