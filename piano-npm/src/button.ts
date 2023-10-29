@@ -1,9 +1,16 @@
+/// <reference types="@rbxts/types" />
 import { expandRbxComponentToConstraints } from "./basic";
 import { Element, FoundationElement } from "./element";
 import { BoxConstraints, udim2Vector2 } from "./geometry";
 import { RbxComponent } from "./types";
 import { FoundationWidget } from "./widget";
 
+/** Widget that corresponds to a Roblox TextButton component.
+ *
+ * ```typescript
+ * RobloxTestButton("Hello World!", () => print("Hello World has been clicked"));
+ * ```
+ */
 export class RobloxTextButton extends FoundationWidget {
 	text: string;
 	onClick: () => void;
@@ -30,7 +37,10 @@ export class RobloxTextButton extends FoundationWidget {
 	_layout(component: GuiObject, constraints: BoxConstraints, children: Element[]): Vector2 {
 		return expandRbxComponentToConstraints(component, constraints);
 	}
-
+	/**
+	 * @param text Text string for the .Text attribute
+	 * @param onClick Callback when button is pressed
+	 */
 	constructor(text: string, onClick: () => void) {
 		super([]);
 		this.text = text;

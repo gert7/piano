@@ -5,14 +5,14 @@
 		"downlevelIteration": true,
 		"jsx": "react",
 		"jsxFactory": "Roact.createElement",
-		"jsxFragmentFactory": "Roact.Fragment",
+		"jsxFragmentFactory": "Roact.createFragment",
 		"module": "commonjs",
 		"moduleResolution": "Node",
-		"moduleDetection": "force",
 		"noLib": true,
 		"resolveJsonModule": true,
 		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
+		"moduleDetection": "force",
 		"strict": true,
 		"target": "ESNext",
 		"typeRoots": ["node_modules/@rbxts"],
@@ -20,9 +20,8 @@
 		// configurable
 		"rootDir": "src",
 		"outDir": "out",
-		"baseUrl": "src",
 		"incremental": true,
-		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
-	},
-	"include": ["./src/**/*", "src/removed/provider.ts.none"]
+		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo",
+		"declaration": true
+	}
 }

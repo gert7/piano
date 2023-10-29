@@ -2,8 +2,14 @@ export interface SizeConstraints {
 	isTight(): boolean;
 }
 
+/** A single constraint. */
 export type constraint = number | "Infinity";
 
+/** A set of box constraints with minimum and maximum widths and heights. These
+ * are passed down the element tree and form the foundation of Piano's box-based
+ * geometry model. Constraints can also be absent by being set to the string
+ * "Infinity".
+ */
 export class BoxConstraints implements SizeConstraints {
 	static Infinity: constraint = "Infinity";
 

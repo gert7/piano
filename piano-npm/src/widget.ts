@@ -36,6 +36,7 @@ export abstract class FoundationWidget implements Widget {
 
 	abstract _size(component: RbxComponent): BoxSize;
 
+	// TODO: Should this be protected?
 	_children?: Array<Widget>;
 
 	children(): Array<Widget> | undefined {

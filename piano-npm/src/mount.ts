@@ -1,3 +1,6 @@
+/// <reference types="@rbxts/types" />
+
+/** Entrypoint functions for attaching Piano to a Roblox component. */
 import { RootElement } from "./element";
 import { BoxConstraints } from "./geometry";
 import { Widget } from "./widget";

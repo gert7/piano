@@ -1,3 +1,4 @@
+/// <reference types="@rbxts/types" />
 "use strict";
 
 import { Constructor } from "./constructor";

@@ -1,3 +1,5 @@
+/// <reference types="@rbxts/types" />
+
 /**
  * An element is the persistent, *real* state of a {@link Widget} that exists
  * for as long as a Widget of the same type occupies the same exact position in

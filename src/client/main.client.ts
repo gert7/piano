@@ -1,10 +1,10 @@
-import { EdgeInsets } from "./geometry";
-import { Center, Flexible, Padding, Row, TextWidget } from "./basic";
-import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "./widget";
-import { BuildContext, Element, RootElement } from "./element";
-import { RobloxTextButton } from "./button";
-import { useRef, useState } from "./hook_primitives";
-import { mountPiano } from "./mount";
+import { Center, Flexible, Padding, Row, TextWidget } from "@rbxts/piano-npm/out/basic";
+import { RobloxTextButton } from "@rbxts/piano-npm/out/button";
+import { BuildContext, Element } from "@rbxts/piano-npm/out/element";
+import { EdgeInsets } from "@rbxts/piano-npm/out/geometry";
+import { useRef, useState } from "@rbxts/piano-npm/out/hook_primitives";
+import { mountPiano } from "@rbxts/piano-npm/out/mount";
+import { HookWidget, InheritedWidget, StatelessWidget, Widget } from "@rbxts/piano-npm/out/widget";
 
 const Players = game.GetService("Players");
 

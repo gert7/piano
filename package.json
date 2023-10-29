@@ -1,8 +1,8 @@
 {
   "name": "piano",
   "version": "1.0.0",
-  "author": "",
-  "main": "src/client/index.ts",
+  "author": "gert7",
+  "main": "out/init.lua",
   "devDependencies": {
     "@rbxts/compiler-types": "^2.2.0-types.0",
     "@rbxts/types": "^1.0.661",
@@ -16,6 +16,14 @@
     "typedoc": "^0.23.25",
     "typescript": "^4.9.5"
   },
+  "types": "out/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "out",
+    "!**/*.tsbuildinfo"
+  ],
   "description": "Flutter for Roblox",
   "keywords": [],
   "license": "ISC",
@@ -23,5 +31,8 @@
     "build": "rbxtsc",
     "watch": "rbxtsc -w --usePolling",
     "docs": "typedoc"
+  },
+  "dependencies": {
+    "@rbxts/piano-npm": "file:piano-npm/rbxts-piano-npm-1.0.0.tgz"
   }
 }
