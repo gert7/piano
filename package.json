@@ -30,7 +30,8 @@
   "scripts": {
     "build": "rbxtsc",
     "watch": "rbxtsc -w --usePolling",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "buildlib": "node ./raise_library.js"
   },
   "dependencies": {
     "@rbxts/piano-npm": "file:piano-npm/rbxts-piano-npm-1.0.0.tgz"
