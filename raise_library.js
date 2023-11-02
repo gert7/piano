@@ -28,12 +28,13 @@ const processes = fs.readdirSync(".")
 			"--emitDeclarationOnly",
 			filename
 		]).on("exit", code => {
-			if(code === 0) {
-				resolve();
-			} else {
+			resolve();
+			// if(code === 0) {
+				// resolve();
+			// } else {
 				// console.log(`Command tsc for ${filename} exited with code ${code}`);
 				// reject(new Error(`Command tsc for ${filename} exited with code ${code}`));
-			}
+			// }
 		})
 		)
 	);
